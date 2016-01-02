@@ -1,7 +1,10 @@
-#! /usr/bin/env node
-declare function require(name: string);
+///<reference path="../vendor/require.d.ts" />
+///<reference path="./Task.ts" />
 
-// var Colors = require('colors')
+
+var task: Task = new Task()
+
+var Colors = require('colors')
 // var MovieNightScraper = require('./MovieNightScraper.js')
 var cliArgs = require('command-line-args')
 

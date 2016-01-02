@@ -1,5 +1,4 @@
 
-
 var numTasks: number = 0
 
 enum ResultType{

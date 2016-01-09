@@ -2,6 +2,8 @@
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
 ///<reference path="./MovieNightAPI/MovieNightAPI.ts" />
+///<reference path="./MovieNightAPI/ProcessNode.ts" />
+
 
 var colors = require('colors')
 // var MovieNightScraper = require('./MovieNightScraper.js')
@@ -90,19 +92,17 @@ else
 {
 	if (options.scrape)
 	{
-		var url = options.scrape
-
-		var updateBlock = function(results: MovieNightAPI.Result[], isFinished: boolean)
-		{
-			console.log("hi")
+		var head = new MovieNightAPI.ProcessNode(function(results: MovieNightAPI.Result[], process: MovieNightAPI.ProcessNode) {
+			console.log("scrape result: " + options.scrape)
 			console.log("results: " + JSON.stringify(results, null, 4).red)
-		}
+			console.log("finished: ".blue, process.finished)
+		})
 		var vodlocker = new MovieNightAPI.Vodlocker_com()
-		vodlocker.updateBlock = updateBlock
+		vodlocker.scrape(options.scrape, head)
 		
 		//console.log("recognized: " + vodlocker.recognizesUrlMayContainContent(options.scrape))
 
-		vodlocker.scrape(url)
+		// vodlocker.scrape(url, head)
 
 	} else
 	{

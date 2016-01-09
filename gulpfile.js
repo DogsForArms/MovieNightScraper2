@@ -24,7 +24,8 @@ var typescript = require('gulp-typescript');
 
 var TYPESCRIPT_PROJECT = typescript.createProject({
   declarationFiles: true,
-  sortOutput: true
+  sortOutput: true,
+  module: 'commonjs'
 });
 
 gulp.task('scripts', function() {

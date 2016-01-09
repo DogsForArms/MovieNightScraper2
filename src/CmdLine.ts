@@ -1,10 +1,7 @@
-///<reference path="../vendor/require.d.ts" />
-///<reference path="./Task.ts" />
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
-
-
-var task: Task = new Task()
+///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
+///<reference path="./MovieNightAPI/MovieNightAPI.ts" />
 
 var colors = require('colors')
 // var MovieNightScraper = require('./MovieNightScraper.js')
@@ -51,10 +48,10 @@ var requiredCommandLineConfigs: CommandLineConfig[] = [
 	// 	description: "Paginate test" 
 	// }
 	{
-		name: "resolve",
+		name: "scrape",
 		type: String,
 		alias: "r",
-		description: "Return media scrape of a url."
+		description: "Scrape media from a url."
 	}, 
 ]
 var cli = cliArgs( optionalCommandLineConfigs.concat(requiredCommandLineConfigs) )
@@ -91,7 +88,27 @@ if (options.help || !hasNeededArgs)
 } 
 else 
 {
-	console.log(JSON.stringify(options, null, 4).white)
+	if (options.scrape)
+	{
+		var url = options.scrape
+
+		var updateBlock = function(results: MovieNightAPI.Result[], isFinished: boolean)
+		{
+			console.log("hi")
+			console.log("results: " + JSON.stringify(results, null, 4).red)
+		}
+		var vodlocker = new MovieNightAPI.Vodlocker_com()
+		vodlocker.updateBlock = updateBlock
+		
+		//console.log("recognized: " + vodlocker.recognizesUrlMayContainContent(options.scrape))
+
+		vodlocker.scrape(url)
+
+	} else
+	{
+		console.log(JSON.stringify(options, null, 4).white)
+		console.warn("No command was run.  Use --help for usage.".red.bold)
+	}
 	
 	// var i = 0
 	// function print(value) {

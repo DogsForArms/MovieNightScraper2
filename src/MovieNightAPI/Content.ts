@@ -122,7 +122,6 @@ module MovieNightAPI
 
 			if (!content.mimeType) 
 			{
-				console.log("NO MIME TYPE")
 				var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl
 				ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function(mimeType) 
 				{

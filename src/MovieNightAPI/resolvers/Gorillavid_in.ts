@@ -10,7 +10,10 @@ module MovieNightAPI
 		name = 'Gorillavid'
 		needsClientRefetch = true
 
-		mediaIdExtractors: ((url: string) => (string))[] = [function(url) { return /(http:\/\/)?gorillavid.in\/(.+)\/?/.exec(url)[2] }]
+		mediaIdExtractors: ((url: string) => (string))[] = [function(url) {
+			var result = /(http:\/\/)?gorillavid.in\/(.+)\/?/.exec(url)
+			return result? result[2] : null
+		 }]
 
 		recognizesUrlMayContainContent(url: string): boolean
 		{

@@ -268,7 +268,10 @@ var MovieNightAPI;
             this.domain = 'gorillavid.in';
             this.name = 'Gorillavid';
             this.needsClientRefetch = true;
-            this.mediaIdExtractors = [function (url) { return /(http:\/\/)?gorillavid.in\/(.+)\/?/.exec(url)[2]; }];
+            this.mediaIdExtractors = [function (url) {
+                    var result = /(http:\/\/)?gorillavid.in\/(.+)\/?/.exec(url);
+                    return result ? result[2] : null;
+                }];
         }
         Gorillavid_in.prototype.recognizesUrlMayContainContent = function (url) {
             return MovieNightAPI.extractMediaId(this, url) != null;
@@ -481,7 +484,6 @@ var MovieNightAPI;
                 process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
             };
             if (!content.mimeType) {
-                console.log("NO MIME TYPE");
                 var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl;
                 MovieNightAPI.ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function (mimeType) {
                     content.mimeType = mimeType;

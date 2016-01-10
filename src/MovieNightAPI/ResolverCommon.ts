@@ -14,6 +14,10 @@ module MovieNightAPI
 		{
 			return request({ 'method': 'GET', 'url': url }, mediaOwnerInfo, process)
 		}
+		export function formPost(url: string, postParams: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise < string >
+		{
+			return request({ 'method': 'POST', 'url': url, 'formData': postParams }, mediaOwnerInfo, process)
+		}
 		export function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise < string > 
 		{
 			return request({ 'method': 'HEAD', 'url': url, 'timeout': 5*1000 }, mediaOwnerInfo, process)
@@ -75,6 +79,41 @@ module MovieNightAPI
 
 	}
 
+	export function extractMediaId(res: Resolver<string>, url: string, process?: ProcessNode) : string
+	{
+		var matches = res.mediaIdExtractors
+			.map(function(regex) { return regex.execute(url) })
+			.filter(function(res)
+			{ return res != null })
+
+		var mediaIdentifier = matches[0]
+		if (process) 
+		{
+			if (!mediaIdentifier) 
+			{
+				var error = new ResolverError(
+					ResolverErrorCode.InsufficientData,
+					("Could not get a MediaId from the url " + url),
+					this)
+				process.processOne({ type: ResultType.Error, error: error })
+			}
+			else 
+			{
+				res.resolveId(mediaIdentifier, process)
+			}
+		}
+		return mediaIdentifier
+	}
+
+
+	export function getHiddenPostParams( html: string): any
+	{
+		var hiddenReg = /input type="hidden" name="(.+)" value="(.+)"/g
+		return hiddenReg.execAll(html).reduce(function(p: any, c: RegExpExecArray) {
+			p[c[1]] = c[2]
+			return p
+		}, {})
+	}
 	
 
 

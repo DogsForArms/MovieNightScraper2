@@ -63,7 +63,7 @@ module MovieNightAPI
 		return oldValue
 	}
 
-	export interface LabeledStreams 
+	export interface LabeledStream 
 	{
 		quality: string
 		streamUrl: string
@@ -75,7 +75,7 @@ module MovieNightAPI
 		posterImageUrl: string;
 		duration: number;
 		streamUrl: string;
-		streamUrls: LabeledStreams[]
+		streamUrls: LabeledStream[]
 		// mediaIdentifier: string;
 		mimeType: string;
 		uid: string;
@@ -102,6 +102,8 @@ module MovieNightAPI
 
 	export function finishedWithContent(content: Content, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode) {
 		content.uid = (mediaOwnerInfo.domain.replace(".", "_") + "|" + content.mediaIdentifier)
+		content.title = niceFilter(content.title)
+
 		if (!contentIsValid(content)) 
 		{
 			var message = "Resolver " + mediaOwnerInfo.name + " cannot make Content with insufficient data." + JSON.stringify(content)
@@ -144,15 +146,15 @@ module MovieNightAPI
 		}
 	}
 	function contentIsValid(content: Content): boolean {
-		var streamUrls: LabeledStreams[] = content.streamUrls
+		var streamUrls: LabeledStream[] = content.streamUrls
 		var hasValidStreamUrls = (streamUrls && streamUrls.every(function(value) {
 			return (value.quality != null &&
 				value.quality != undefined &&
 				value.streamUrl != null &&
 				value.streamUrl != undefined)
-		}))
+		})) && (streamUrls.length > 0)
 
-		return content.streamUrl != null && content.streamUrl != undefined || hasValidStreamUrls
+		return (content.streamUrl != null && content.streamUrl != undefined) || hasValidStreamUrls
 	}
 	
 }

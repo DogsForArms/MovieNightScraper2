@@ -1,11 +1,12 @@
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Raw.ts" />
+///<reference path="./resolvers/Allmyvideos_net.ts" />
 
 module MovieNightAPI
 {
 	export function resolvers(): Resolver<string>[]
 	{
-		return [new Vodlocker_com()]
+		return [new Vodlocker_com(), new Allmyvideos_net()]
 	}
 
 	export function scrape(url: string, process: ProcessNode)

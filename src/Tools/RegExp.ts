@@ -22,30 +22,26 @@ RegExp.prototype.executeAll = function(str: string): string[]
 	
 }
 
-interface RegExp {
-	execute(str: string): string
-	executeAll(str: string): string[]
+RegExp.prototype.execAll = function(str: string): RegExpExecArray[]
+{
+	var self = this
+	var results: RegExpExecArray[] = []
+
+	var val: RegExpExecArray
+	while ((val = self.exec(str)) != null) {
+		results.push(val)
+	}
+
+	return results
 }
 
-// interface StringToRegExpMap { [s: string]: RegExp; }
-// interface StringToStringMap { [s: string]: string; }
+interface RegExp 
+{
+	execute(str: string): string
+	executeAll(str: string): string[]
+	execAll(str: string): RegExpExecArray[]
+}
 
-// RegExp.executeAll = function(obj: StringToRegExpMap, str: string): StringToStringMap {
-// 	var self = this
-// 	if (str === undefined) {
-// 		throw new Error("executeAll from " + self.host + " has no string input")
-// 	}
-
-// 	var acc: StringToStringMap = {}
-
-// 	return Object.keys(obj).reduce(function(l, regKey) {
-// 		var regex = obj[regKey]
-// 		var result = regex.execute(str)
-// 		l[regKey] = result
-		
-// 		return l
-// 	}, acc)
-// }
 RegExp.curryExecute = function(str: string): ((reg: RegExp) => (string)) {
 	return function(reg: RegExp): string {
 		return reg.execute(str)

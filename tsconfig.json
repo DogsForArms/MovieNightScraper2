@@ -11,6 +11,7 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
         "src/MovieNightAPI/resolvers/Raw.ts",
         "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
         "src/MovieNightAPI/Content.ts",

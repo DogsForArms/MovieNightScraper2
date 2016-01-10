@@ -12,25 +12,13 @@ module MovieNightAPI
 		name = 'VodLocker.com'
 		needsClientRefetch = true
 
-
-		mediaIdRegExp:RegExp[] = [ 
-				/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/,
-				/vodlocker\.com\/([^\/]+)$/
-			]
-
 		recognizesUrlMayContainContent(url: string): boolean 
 		{
-			//[/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
-			var matches = this.mediaIdRegExp 
-				.map(function(regex) { return regex.exec(url) })
-				.filter(function(regExpExecArray) 
-				{ return regExpExecArray != null })
-
-			return matches.length > 0
+			return extractMediaId(this, url) != null
 		}
 
-		resolveId(mediaIdentifier: string, process: ProcessNode) {
-			// var task = this.taskManager.registerTask()
+		resolveId(mediaIdentifier: string, process: ProcessNode) 
+		{
 			var self = this
 
 			var url = ('http://vodlocker.com/embed-' + mediaIdentifier + '-650x370.html')
@@ -58,25 +46,27 @@ module MovieNightAPI
 				})
 		}
 
+
+		mediaIdExtractors: RegExp[] = [
+			/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/,
+			/vodlocker\.com\/([^\/]+)$/
+		]
+		
 		scrape(url: string, process: ProcessNode) {
 			var self = this
+			extractMediaId(this, url, process)
 
-			var mediaIds = self.mediaIdRegExp
-				.map(function(regex){ return regex.exec(url)})
-				.filter(function(regExpExecArray){ return regExpExecArray != null && regExpExecArray[1] != null })
-				.map(function(regExpExecArray){ return regExpExecArray[1] })
-
-			if (mediaIds.length > 0){
-				self.resolveId(mediaIds[0], process)
-			}
-			else
-			{
-				var error = new ResolverError(
-					ResolverErrorCode.InsufficientData, 
-					("Could not get a MediaId from the url " + url), 
-					self)
-				process.processOne({ type: ResultType.Error, error: error })
-			}
+			// if (mediaId != null){
+			// 	self.resolveId(mediaId, process)
+			// }
+			// else
+			// {
+			// 	var error = new ResolverError(
+			// 		ResolverErrorCode.InsufficientData, 
+			// 		("Could not get a MediaId from the url " + url), 
+			// 		self)
+			// 	process.processOne({ type: ResultType.Error, error: error })
+			// }
 		}
 	}
 }

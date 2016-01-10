@@ -1,3 +1,5 @@
+var btoa2 = require('btoa')
+
 module MovieNightAPI 
 {
 	export class Raw implements MediaFinder
@@ -22,8 +24,7 @@ module MovieNightAPI
 				{
 					if (mimeTypeIsValid(mType))
 					{
-
-						var content = new Content(tempMediaOwner, '1')
+						var content = new Content(tempMediaOwner, btoa2(url))
 						content.mimeType = mType
 						content.streamUrl = theUrl
 						MovieNightAPI.finishedWithContent(content, tempMediaOwner, mProcess)

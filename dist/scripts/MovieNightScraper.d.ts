@@ -1,6 +1,7 @@
 interface RegExp {
     execute(str: string): string;
     executeAll(str: string): string[];
+    execAll(str: string): RegExpExecArray[];
 }
 interface RegExpConstructor {
     curryExecute(str: string): ((reg: RegExp) => (string));
@@ -14,9 +15,9 @@ declare module MovieNightAPI {
         domain: string;
         name: string;
         needsClientRefetch: boolean;
-        mediaIdRegExp: RegExp[];
         recognizesUrlMayContainContent(url: string): boolean;
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        mediaIdExtractors: RegExp[];
         scrape(url: string, process: ProcessNode): void;
     }
 }
@@ -57,6 +58,7 @@ declare module MovieNightAPI {
     }
     interface Resolver<T> extends MediaFinder, MediaOwnerInfo {
         resolveId(mediaIdentifier: T, process: ProcessNode): void;
+        mediaIdExtractors: RegExp[];
     }
 }
 
@@ -68,9 +70,12 @@ declare var Request: any;
 declare module MovieNightAPI {
     module ResolverCommon {
         function get(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
+        function formPost(url: string, postParams: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
     }
+    function extractMediaId(res: Resolver<string>, url: string, process?: ProcessNode): string;
+    function getHiddenPostParams(html: string): any;
 }
 
 declare module MovieNightAPI {
@@ -90,6 +95,7 @@ declare module MovieNightAPI {
     }
 }
 
+declare var btoa2: any;
 declare module MovieNightAPI {
     class Raw implements MediaFinder {
         recognizesUrlMayContainContent(url: string): boolean;
@@ -97,8 +103,51 @@ declare module MovieNightAPI {
     }
 }
 
+declare module MovieNightAPI {
+    function niceFilter(rawTitle: string): string;
+    interface LabeledStream {
+        quality: string;
+        streamUrl: string;
+    }
+    class Content {
+        mediaIdentifier: string;
+        title: string;
+        snapshotImageUrl: string;
+        posterImageUrl: string;
+        duration: number;
+        streamUrl: string;
+        streamUrls: LabeledStream[];
+        mimeType: string;
+        uid: string;
+        needsClientRefetch: boolean;
+        domain: string;
+        mediaOwnerName: string;
+        constructor(mediaOwner: MediaOwnerInfo, mediaIdentifier: string);
+    }
+    function mimeTypeIsValid(mimeType: string): boolean;
+    function finishedWithContent(content: Content, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): void;
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+/// <reference path="../Resolver.d.ts" />
+/// <reference path="../Content.d.ts" />
+declare module MovieNightAPI {
+    class Allmyvideos_net implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        recognizesUrlMayContainContent(url: string): boolean;
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        mediaIdExtractors: RegExp[];
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
+/// <reference path="resolvers/Allmyvideos_net.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;
@@ -118,28 +167,3 @@ declare var cli: Cli;
 declare var options: any;
 declare var hasNeededArgs: boolean;
 declare var usage: any;
-
-declare module MovieNightAPI {
-    function niceFilter(rawTitle: string): string;
-    interface LabeledStreams {
-        quality: string;
-        streamUrl: string;
-    }
-    class Content {
-        mediaIdentifier: string;
-        title: string;
-        snapshotImageUrl: string;
-        posterImageUrl: string;
-        duration: number;
-        streamUrl: string;
-        streamUrls: LabeledStreams[];
-        mimeType: string;
-        uid: string;
-        needsClientRefetch: boolean;
-        domain: string;
-        mediaOwnerName: string;
-        constructor(mediaOwner: MediaOwnerInfo, mediaIdentifier: string);
-    }
-    function mimeTypeIsValid(mimeType: string): boolean;
-    function finishedWithContent(content: Content, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): void;
-}

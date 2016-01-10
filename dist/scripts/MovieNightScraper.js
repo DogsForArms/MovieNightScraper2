@@ -1,4 +1,260 @@
-///<reference path="./MovieNightAPI.ts" />
+///<reference path="../../vendor/es6-promise.d.ts" />
+///<reference path="../../vendor/request.d.ts" />
+///<reference path="../../vendor/node.d.ts" />
+var Request = require('request');
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    //network stuff
+    var ResolverCommon;
+    (function (ResolverCommon) {
+        function get(url, res, process) {
+            return request({ 'method': 'GET', 'url': url }, res, process);
+        }
+        ResolverCommon.get = get;
+        function headOnly(url, res, process) {
+            return request({ 'method': 'HEAD', 'url': url }, res, process);
+        }
+        ResolverCommon.headOnly = headOnly;
+        function request(options, res, process) {
+            var q = new Promise(function (resolve, reject) {
+                var self = this;
+                var retryRequest = function (error, options) {
+                    var retryOnErrorCodes = ['ECONNRESET'];
+                    return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1));
+                };
+                //set retry parameters
+                options.maxAttempts = 15;
+                options.retryDelay = 300 + Math.random() * 7000;
+                var makeRequest = function (options) {
+                    Request(options, function (error, response, data) {
+                        if (error) {
+                            if (retryRequest(error, options)) {
+                                //decrement & reset retry parameters
+                                setTimeout(function () {
+                                    options.maxAttempts = options.maxAttempts - 1;
+                                    console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim);
+                                    options.retryDelay = 300 + Math.random() * 7000;
+                                    makeRequest(options);
+                                }, options.retryDelay);
+                            }
+                            else {
+                                console.log("REQUEST ERROR".red.bold.underline);
+                                console.log(error);
+                                // var internetError = new ResolverState(-4, self, { 'error': error, 'url': options.url })
+                                var failure = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InternetFailure, "The internet failed when looking up url <" + options.url + ">", this);
+                                reject(failure);
+                            }
+                        }
+                        else {
+                            resolve((options.method == 'HEAD') ? response.headers : data);
+                        }
+                    });
+                };
+                makeRequest(options);
+            });
+            q.catch(function (failure) {
+                console.log("network error failed".red);
+                process.processOne({ type: MovieNightAPI.ResultType.Error, error: failure });
+            });
+            return q;
+        }
+        ResolverCommon.request = request;
+    })(ResolverCommon = MovieNightAPI.ResolverCommon || (MovieNightAPI.ResolverCommon = {}));
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+///<reference path="../ResolverCommon.ts" />
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Vodlocker_com = (function () {
+        function Vodlocker_com() {
+            //Resolver properties
+            this.domain = 'vodlocker.com';
+            this.name = 'VodLocker.com';
+            this.needsClientFetch = true;
+            //internal properties
+            this.mediaIdRegExp = [/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/, /vodlocker\.com\/([^\/]*)$/];
+        }
+        Vodlocker_com.prototype.recognizesUrlMayContainContent = function (url) {
+            var matches = [/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
+                .map(function (regex) { return regex.exec(url); })
+                .filter(function (regExpExecArray) { return regExpExecArray != null; });
+            return matches.length > 0;
+        };
+        Vodlocker_com.prototype.resolveId = function (mediaIdentifier, process) {
+            // var task = this.taskManager.registerTask()
+            var self = this;
+            var url = ('http://vodlocker.com/embed-' + mediaIdentifier + '-650x370.html');
+            MovieNightAPI.ResolverCommon.get(url, self, process)
+                .then(function (html) {
+                var result = RegExp.executeAll({
+                    'image': /image:[^"]*"(.+)"/,
+                    'streamUrl': /file:[^"]*"(.+)"/,
+                    'duration': /duration:[^"]*"([0-9]+)"/
+                }, html);
+                result['mimeType'] = 'video/mp4';
+                var titleUrl = ('http://vodlocker.com/' + mediaIdentifier);
+                MovieNightAPI.ResolverCommon.get(titleUrl, self, process)
+                    .then(function (titleHtml) {
+                    result['title'] = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml);
+                    MovieNightAPI.createContent(result, self, process);
+                });
+            });
+        };
+        Vodlocker_com.prototype.scrape = function (url, process) {
+            var self = this;
+            var mediaIds = self.mediaIdRegExp
+                .map(function (regex) { return regex.exec(url); })
+                .filter(function (regExpExecArray) { return regExpExecArray != null && regExpExecArray[1] != null; })
+                .map(function (regExpExecArray) { return regExpExecArray[1]; });
+            if (mediaIds.length > 0) {
+                self.resolveId(mediaIds[0], process);
+            }
+            else {
+                var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InsufficientData, ("Could not get a MediaId from the url " + url), self);
+                process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
+            }
+        };
+        return Vodlocker_com;
+    })();
+    MovieNightAPI.Vodlocker_com = Vodlocker_com;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var count = 0;
+    function UID() {
+        return count++;
+    }
+    var ProcessNode = (function () {
+        function ProcessNode(updateBlock, parent) {
+            this.parent = parent;
+            this.uid = UID();
+            this.children = [];
+            this.finished = false;
+            var self = this;
+            self.updateBlock = function (results, process) {
+                if (self.finished) {
+                    console.log("Task finished prematurely.".red.bold);
+                }
+                var numTotal = self.children.length;
+                var numFinished = self.children.filter(function (node) { return node.finished; }).length;
+                self.finished = (numTotal == numFinished);
+                updateBlock(results, self);
+            };
+        }
+        ProcessNode.prototype.newChildProcess = function () {
+            var self = this;
+            var child = new ProcessNode(self.updateBlock, self);
+            self.children.push(child);
+            return child;
+        };
+        ProcessNode.prototype.process = function (results) {
+            var self = this;
+            self.updateBlock(results, self);
+        };
+        ProcessNode.prototype.processOne = function (result) {
+            var self = this;
+            self.updateBlock([result], self);
+        };
+        return ProcessNode;
+    })();
+    MovieNightAPI.ProcessNode = ProcessNode;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+///<reference path="../vendor/colors.d.ts" />
+///<reference path="../vendor/command-line-args.d.ts" />
+///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
+///<reference path="./MovieNightAPI/ResolverCommon.ts" />
+///<reference path="./MovieNightAPI/ProcessNode.ts" />
+var colors = require('colors');
+// var MovieNightScraper = require('./MovieNightScraper.js')
+var cliArgs = require('command-line-args');
+var optionalCommandLineConfigs = [
+    {
+        name: "verbose",
+        type: Boolean,
+        alias: "v",
+        description: "lots of output"
+    },
+    {
+        name: "help",
+        type: Boolean,
+        description: "Print usage instructions"
+    },
+];
+var requiredCommandLineConfigs = [
+    // { 
+    // 	name: "searchPodcast", 
+    // 	type: String, 
+    // 	alias: "p", 
+    // 	description: "Give me a query" 
+    // },
+    // { 
+    // 	name: "resolvePodcast", 
+    // 	type: String, 
+    // 	alias: "f", 
+    // 	description: "Give me a valid itunes urlFeed for a podcast" 
+    // },
+    // { 
+    // 	name: "search", 
+    // 	type: String, 
+    // 	alias: "s", 
+    // 	description: "Give me a query" 
+    // },
+    // { 
+    // 	name: "paginateTest", 
+    // 	type: Boolean, 
+    // 	alias: "t", 
+    // 	description: "Paginate test" 
+    // }
+    {
+        name: "scrape",
+        type: String,
+        alias: "r",
+        description: "Scrape media from a url."
+    },
+];
+var cli = cliArgs(optionalCommandLineConfigs.concat(requiredCommandLineConfigs));
+var options;
+try {
+    options = cli.parse();
+}
+catch (e) {
+    options = { help: true };
+    console.log("\n*****\nError: Incorect Usage\n*****".red.underline.bold);
+}
+var hasNeededArgs = requiredCommandLineConfigs.some(function (commandLineConfig) {
+    return options[commandLineConfig.name];
+});
+if (!hasNeededArgs) {
+    console.log("\n*****\nError, you must provide one of the required commands: ".red, requiredCommandLineConfigs.map(function (clc) { return clc.name; }).join(', ').italic);
+    console.log("*****".red);
+}
+var usage = cli.getUsage({
+    header: "Movie Night Backend.",
+    footer: "Search and Resolve content."
+});
+if (options.help || !hasNeededArgs) {
+    console.log(usage);
+}
+else {
+    if (options.scrape) {
+        var head = new MovieNightAPI.ProcessNode(function (results, process) {
+            console.log("scrape result: " + options.scrape);
+            console.log("results: " + JSON.stringify(results, null, 4).red);
+            console.log("finished: ".blue, process.finished);
+        });
+        var vodlocker = new MovieNightAPI.Vodlocker_com();
+        vodlocker.scrape(options.scrape, head);
+    }
+    else {
+        console.log(JSON.stringify(options, null, 4).white);
+        console.warn("No command was run.  Use --help for usage.".red.bold);
+    }
+}
+
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function objectCouldCreateContent(obj) {
@@ -124,69 +380,27 @@ var MovieNightAPI;
     MovieNightAPI.createContent = createContent;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
-///<reference path="../../vendor/es6-promise.d.ts" />
-///<reference path="../../vendor/request.d.ts" />
-///<reference path="../../vendor/node.d.ts" />
-///<reference path="./Content.ts" />
-var Request = require('request');
 var MovieNightAPI;
 (function (MovieNightAPI) {
-    //network stuff
-    var ResolverCommon;
-    (function (ResolverCommon) {
-        function get(url, res, process) {
-            return request({ 'method': 'GET', 'url': url }, res, process);
+    function resolvers() {
+        return [new MovieNightAPI.Vodlocker_com()];
+    }
+    function scrape(url, process) {
+        var responders = resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(url); });
+        if (responders.length == 0) {
+            var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
+            process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
         }
-        ResolverCommon.get = get;
-        function headOnly(url, res, process) {
-            return request({ 'method': 'HEAD', 'url': url }, res, process);
-        }
-        ResolverCommon.headOnly = headOnly;
-        function request(options, res, process) {
-            var q = new Promise(function (resolve, reject) {
-                var self = this;
-                var retryRequest = function (error, options) {
-                    var retryOnErrorCodes = ['ECONNRESET'];
-                    return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1));
-                };
-                //set retry parameters
-                options.maxAttempts = 15;
-                options.retryDelay = 300 + Math.random() * 7000;
-                var makeRequest = function (options) {
-                    Request(options, function (error, response, data) {
-                        if (error) {
-                            if (retryRequest(error, options)) {
-                                //decrement & reset retry parameters
-                                setTimeout(function () {
-                                    options.maxAttempts = options.maxAttempts - 1;
-                                    console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim);
-                                    options.retryDelay = 300 + Math.random() * 7000;
-                                    makeRequest(options);
-                                }, options.retryDelay);
-                            }
-                            else {
-                                console.log("REQUEST ERROR".red.bold.underline);
-                                console.log(error);
-                                // var internetError = new ResolverState(-4, self, { 'error': error, 'url': options.url })
-                                var failure = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InternetFailure, "The internet failed when looking up url <" + options.url + ">", this);
-                                reject(failure);
-                            }
-                        }
-                        else {
-                            resolve((options.method == 'HEAD') ? response.headers : data);
-                        }
-                    });
-                };
-                makeRequest(options);
+        else {
+            responders.map(function (resolver) {
+                var childProcess = process.newChildProcess();
+                return { "resolver": resolver, "process": childProcess };
+            }).forEach(function (pair) {
+                pair.resolver.scrape(url, pair.process);
             });
-            q.catch(function (failure) {
-                console.log("network error failed".red);
-                process.processOne({ type: MovieNightAPI.ResultType.Error, error: failure });
-            });
-            return q;
         }
-        ResolverCommon.request = request;
-    })(ResolverCommon = MovieNightAPI.ResolverCommon || (MovieNightAPI.ResolverCommon = {}));
+    }
+    MovieNightAPI.scrape = scrape;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
 var MovieNightAPI;
@@ -237,222 +451,3 @@ RegExp.executeAll = function (obj, str) {
         return l;
     }, acc);
 };
-
-///<reference path="../MovieNightAPI.ts" />
-///<reference path="../Content.ts" />
-///<reference path="../Resolver.ts" />
-///<reference path="../../../vendor/es6-promise.d.ts" />
-///<reference path="../../../vendor/colors.d.ts" />
-///<reference path="../../RegExp/RegExp.ts" />
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    var Vodlocker_com = (function () {
-        function Vodlocker_com() {
-            //Resolver properties
-            this.domain = 'vodlocker.com';
-            this.name = 'VodLocker.com';
-            this.needsClientFetch = true;
-            //internal properties
-            this.mediaIdRegExp = [/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/, /vodlocker\.com\/([^\/]*)$/];
-        }
-        Vodlocker_com.prototype.recognizesUrlMayContainContent = function (url) {
-            var matches = [/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
-                .map(function (regex) { return regex.exec(url); })
-                .filter(function (regExpExecArray) { return regExpExecArray != null; });
-            return matches.length > 0;
-        };
-        Vodlocker_com.prototype.resolveId = function (mediaIdentifier, process) {
-            // var task = this.taskManager.registerTask()
-            var self = this;
-            var url = ('http://vodlocker.com/embed-' + mediaIdentifier + '-650x370.html');
-            MovieNightAPI.ResolverCommon.get(url, self, process)
-                .then(function (html) {
-                var result = RegExp.executeAll({
-                    'image': /image:[^"]*"(.+)"/,
-                    'streamUrl': /file:[^"]*"(.+)"/,
-                    'duration': /duration:[^"]*"([0-9]+)"/
-                }, html);
-                result['mimeType'] = 'video/mp4';
-                var titleUrl = ('http://vodlocker.com/' + mediaIdentifier);
-                MovieNightAPI.ResolverCommon.get(titleUrl, self, process)
-                    .then(function (titleHtml) {
-                    result['title'] = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml);
-                    MovieNightAPI.createContent(result, self, process);
-                });
-            });
-        };
-        Vodlocker_com.prototype.scrape = function (url, process) {
-            var self = this;
-            var mediaIds = self.mediaIdRegExp
-                .map(function (regex) { return regex.exec(url); })
-                .filter(function (regExpExecArray) { return regExpExecArray != null && regExpExecArray[1] != null; })
-                .map(function (regExpExecArray) { return regExpExecArray[1]; });
-            if (mediaIds.length > 0) {
-                self.resolveId(mediaIds[0], process);
-            }
-            else {
-                var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InsufficientData, ("Could not get a MediaId from the url " + url), self);
-                process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
-            }
-        };
-        return Vodlocker_com;
-    })();
-    MovieNightAPI.Vodlocker_com = Vodlocker_com;
-})(MovieNightAPI || (MovieNightAPI = {}));
-
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    var count = 0;
-    function UID() {
-        return count++;
-    }
-    var ProcessNode = (function () {
-        function ProcessNode(updateBlock, parent) {
-            this.parent = parent;
-            this.uid = UID();
-            this.children = [];
-            this.finished = false;
-            var self = this;
-            self.updateBlock = function (results, process) {
-                if (self.finished) {
-                    console.log("Task finished prematurely.".red.bold);
-                }
-                var numTotal = self.children.length;
-                var numFinished = self.children.filter(function (node) { return node.finished; }).length;
-                self.finished = (numTotal == numFinished);
-                updateBlock(results, self);
-            };
-        }
-        ProcessNode.prototype.newChildProcess = function () {
-            var self = this;
-            var child = new ProcessNode(self.updateBlock, self);
-            self.children.push(child);
-            return child;
-        };
-        ProcessNode.prototype.process = function (results) {
-            var self = this;
-            self.updateBlock(results, self);
-        };
-        ProcessNode.prototype.processOne = function (result) {
-            var self = this;
-            self.updateBlock([result], self);
-        };
-        return ProcessNode;
-    })();
-    MovieNightAPI.ProcessNode = ProcessNode;
-})(MovieNightAPI || (MovieNightAPI = {}));
-
-///<reference path="../vendor/colors.d.ts" />
-///<reference path="../vendor/command-line-args.d.ts" />
-///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
-///<reference path="./MovieNightAPI/MovieNightAPI.ts" />
-///<reference path="./MovieNightAPI/ProcessNode.ts" />
-var colors = require('colors');
-// var MovieNightScraper = require('./MovieNightScraper.js')
-var cliArgs = require('command-line-args');
-var optionalCommandLineConfigs = [
-    {
-        name: "verbose",
-        type: Boolean,
-        alias: "v",
-        description: "lots of output"
-    },
-    {
-        name: "help",
-        type: Boolean,
-        description: "Print usage instructions"
-    },
-];
-var requiredCommandLineConfigs = [
-    // { 
-    // 	name: "searchPodcast", 
-    // 	type: String, 
-    // 	alias: "p", 
-    // 	description: "Give me a query" 
-    // },
-    // { 
-    // 	name: "resolvePodcast", 
-    // 	type: String, 
-    // 	alias: "f", 
-    // 	description: "Give me a valid itunes urlFeed for a podcast" 
-    // },
-    // { 
-    // 	name: "search", 
-    // 	type: String, 
-    // 	alias: "s", 
-    // 	description: "Give me a query" 
-    // },
-    // { 
-    // 	name: "paginateTest", 
-    // 	type: Boolean, 
-    // 	alias: "t", 
-    // 	description: "Paginate test" 
-    // }
-    {
-        name: "scrape",
-        type: String,
-        alias: "r",
-        description: "Scrape media from a url."
-    },
-];
-var cli = cliArgs(optionalCommandLineConfigs.concat(requiredCommandLineConfigs));
-var options;
-try {
-    options = cli.parse();
-}
-catch (e) {
-    options = { help: true };
-    console.log("\n*****\nError: Incorect Usage\n*****".red.underline.bold);
-}
-var hasNeededArgs = requiredCommandLineConfigs.some(function (commandLineConfig) {
-    return options[commandLineConfig.name];
-});
-if (!hasNeededArgs) {
-    console.log("\n*****\nError, you must provide one of the required commands: ".red, requiredCommandLineConfigs.map(function (clc) { return clc.name; }).join(', ').italic);
-    console.log("*****".red);
-}
-var usage = cli.getUsage({
-    header: "Movie Night Backend.",
-    footer: "Search and Resolve content."
-});
-if (options.help || !hasNeededArgs) {
-    console.log(usage);
-}
-else {
-    if (options.scrape) {
-        var head = new MovieNightAPI.ProcessNode(function (results, process) {
-            console.log("scrape result: " + options.scrape);
-            console.log("results: " + JSON.stringify(results, null, 4).red);
-            console.log("finished: ".blue, process.finished);
-        });
-        var vodlocker = new MovieNightAPI.Vodlocker_com();
-        vodlocker.scrape(options.scrape, head);
-    }
-    else {
-        console.log(JSON.stringify(options, null, 4).white);
-        console.warn("No command was run.  Use --help for usage.".red.bold);
-    }
-}
-
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    function resolvers() {
-        return [new MovieNightAPI.Vodlocker_com()];
-    }
-    function scrape(url, process) {
-        var responders = resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(url); });
-        if (responders.length == 0) {
-            var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
-            process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
-        }
-        else {
-            responders.map(function (resolver) {
-                var childProcess = process.newChildProcess();
-                return { "resolver": resolver, "process": childProcess };
-            }).forEach(function (pair) {
-                pair.resolver.scrape(url, pair.process);
-            });
-        }
-    }
-    MovieNightAPI.scrape = scrape;
-})(MovieNightAPI || (MovieNightAPI = {}));

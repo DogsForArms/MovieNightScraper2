@@ -1,7 +1,7 @@
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
-///<reference path="./MovieNightAPI/MovieNightAPI.ts" />
+///<reference path="./MovieNightAPI/ResolverCommon.ts" />
 ///<reference path="./MovieNightAPI/ProcessNode.ts" />
 
 

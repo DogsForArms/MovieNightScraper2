@@ -1,7 +1,6 @@
 ///<reference path="../../vendor/es6-promise.d.ts" />
 ///<reference path="../../vendor/request.d.ts" />
 ///<reference path="../../vendor/node.d.ts" />
-///<reference path="./Content.ts" />
 
 var Request = require('request')
 

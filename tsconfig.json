@@ -9,5 +9,14 @@
     },
     "exclude": [
         "node_modules"
+    ],
+    "files": [
+        "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
+        "src/MovieNightAPI/Content.ts",
+        "src/MovieNightAPI/ProcessNode.ts",
+        "src/MovieNightAPI/Public.ts",
+        "src/MovieNightAPI/Resolver.ts",
+        "src/MovieNightAPI/ResolverCommon.ts",
+        "src/RegExp/RegExp.ts"
     ]
 }

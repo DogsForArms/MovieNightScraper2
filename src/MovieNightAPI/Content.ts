@@ -1,5 +1,3 @@
-///<reference path="./MovieNightAPI.ts" />
-
 module MovieNightAPI 
 {
 

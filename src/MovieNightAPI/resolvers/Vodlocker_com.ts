@@ -1,10 +1,5 @@
-///<reference path="../MovieNightAPI.ts" />
-///<reference path="../Content.ts" />
-///<reference path="../Resolver.ts" />
 ///<reference path="../../../vendor/es6-promise.d.ts" />
 ///<reference path="../../../vendor/colors.d.ts" />
-///<reference path="../../RegExp/RegExp.ts" />
-
 module MovieNightAPI 
 {
 

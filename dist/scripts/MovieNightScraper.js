@@ -1,3 +1,40 @@
+RegExp.prototype.execute = function (str) {
+    var results = this.exec(str);
+    if (results) {
+        return results[1];
+    }
+    return null;
+};
+RegExp.prototype.executeAll = function (str) {
+    var self = this;
+    var results = [];
+    var val;
+    while ((val = self.execute(str)) != null) {
+        results.push(val);
+    }
+    return results;
+};
+// interface StringToRegExpMap { [s: string]: RegExp; }
+// interface StringToStringMap { [s: string]: string; }
+// RegExp.executeAll = function(obj: StringToRegExpMap, str: string): StringToStringMap {
+// 	var self = this
+// 	if (str === undefined) {
+// 		throw new Error("executeAll from " + self.host + " has no string input")
+// 	}
+// 	var acc: StringToStringMap = {}
+// 	return Object.keys(obj).reduce(function(l, regKey) {
+// 		var regex = obj[regKey]
+// 		var result = regex.execute(str)
+// 		l[regKey] = result
+// 		return l
+// 	}, acc)
+// }
+RegExp.curryExecute = function (str) {
+    return function (reg) {
+        return reg.execute(str);
+    };
+};
+
 ///<reference path="../../../vendor/es6-promise.d.ts" />
 ///<reference path="../../../vendor/colors.d.ts" />
 ///<reference path="../../Tools/RegExp.ts" />

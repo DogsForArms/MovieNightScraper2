@@ -1,5 +1,14 @@
+interface RegExp {
+    execute(str: string): string;
+    executeAll(str: string): string[];
+}
+interface RegExpConstructor {
+    curryExecute(str: string): ((reg: RegExp) => (string));
+}
+
 /// <reference path="../../../vendor/es6-promise.d.ts" />
 /// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
 declare module MovieNightAPI {
     class Vodlocker_com implements Resolver<string> {
         domain: string;

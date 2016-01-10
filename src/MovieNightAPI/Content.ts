@@ -1,20 +1,6 @@
 module MovieNightAPI 
 {
 
-	function objectCouldCreateContent(obj: any): boolean 
-	{
-		var streamUrls: LabeledStreams[] = obj.streamUrls
-
-		var hasValidStreamUrls = (streamUrls && streamUrls.every(function(value) {
-									return (value.quality != null &&
-										value.quality != undefined &&
-										value.streamUrl != null &&
-										value.streamUrl != undefined)
-								 }))
-
-		return obj.streamUrl || hasValidStreamUrls
-	}
-
 	var removeThese = ['watchseries',
 		'ch', 'x264', 'mp4', 'avi', 'flv',
 		'DVDRip', 'HDTV', 'hdtv', 'XviD',
@@ -85,65 +71,58 @@ module MovieNightAPI
 
 	export class Content {
 		title: string;
-		image: string;
+		snapshotImageUrl: string;
+		posterImageUrl: string;
 		duration: number;
 		streamUrl: string;
 		streamUrls: LabeledStreams[]
-		mediaIdentifier: string;
-		needsClientIp: boolean;
+		// mediaIdentifier: string;
 		mimeType: string;
 		uid: string;
-		domain: string;
-		resolverName: string;
 
-		constructor(obj: any, res: MovieNightAPI.Resolver<any>) {
-			this.title = niceFilter(obj.title ? obj.title : "untitled")
-			this.image = obj.image
-			this.duration = obj.duration
-			this.streamUrl = obj.streamUrl
-			this.streamUrls = obj.streamUrls
-			this.mediaIdentifier = obj.mediaIdentifier
-			this.needsClientIp = obj.needsClientIp
-			this.mimeType = obj.mimeType
-			this.uid = obj.uid ? obj.uid : (obj.mediaIdentifier + ":" + res.name)
-			this.domain = res.domain
-			this.resolverName = res.name
+		needsClientRefetch: boolean;
+		domain: string;
+		mediaOwnerName: string;
+
+		constructor(mediaOwner: MediaOwnerInfo, public mediaIdentifier: string)
+		{
+			this.title = "untitled"
+			this.needsClientRefetch = mediaOwner.needsClientRefetch
+			this.domain = mediaOwner.domain
+			this.mediaOwnerName = mediaOwner.name
 		}
 	}
 
-	function mimeTypeIsValid(mimeType: string): boolean {
+	export function mimeTypeIsValid(mimeType: string): boolean {
 		return (["video/mp4", "video/webm", "video/ogg", "video/youtube",
 			"audio/mpeg", "video/twitch", "video/x-flv", "application/octet-stream",
 			"rtmp"].filter(function(v) { return v == mimeType }).length == 1)
 	}
 
 
-	export function createContent(obj: any, res: Resolver<any>, process: ProcessNode) {
-
-		if (!objectCouldCreateContent(obj)) 
+	export function finishedWithContent(content: Content, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode) {
+		content.uid = (mediaOwnerInfo.domain.replace(".", "_") + "|" + content.mediaIdentifier)
+		if (!contentIsValid(content)) 
 		{
-			var message = "Resolver " + res.name + " cannot make Content with insufficient data." + JSON.stringify(obj)
-			var error = new ResolverError(ResolverErrorCode.InsufficientData, message, res)
+			var message = "Resolver " + mediaOwnerInfo.name + " cannot make Content with insufficient data." + JSON.stringify(content)
+			var error = new ResolverError(ResolverErrorCode.InsufficientData, message, mediaOwnerInfo)
 
 			process.processOne({ type: ResultType.Error, error: error })
 		}
 		else 
 		{
-			var content = new Content(obj, res)
-
 			var reportInvalidMimeType = function()
 			{
 				var message = "Mime type " + content.mimeType + " is not supported."
-				var error = new ResolverError(ResolverErrorCode.InvalidMimeType, message, res)
+				var error = new ResolverError(ResolverErrorCode.InvalidMimeType, message, mediaOwnerInfo)
 				process.processOne({ type: ResultType.Error, error: error })
 			}
 
 			if (!content.mimeType) 
 			{
 				var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl
-				ResolverCommon.headOnly(videoUrl, res, process).then(function(json: any) 
+				ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function(mimeType) 
 				{
-					var mimeType = json['content-type']
 					if (!mimeTypeIsValid(mimeType)) 
 					{
 						reportInvalidMimeType()
@@ -163,6 +142,17 @@ module MovieNightAPI
 				process.processOne({ type: ResultType.Content, content: content })
 			}
 		}
+	}
+	function contentIsValid(content: Content): boolean {
+		var streamUrls: LabeledStreams[] = content.streamUrls
+		var hasValidStreamUrls = (streamUrls && streamUrls.every(function(value) {
+			return (value.quality != null &&
+				value.quality != undefined &&
+				value.streamUrl != null &&
+				value.streamUrl != undefined)
+		}))
+
+		return content.streamUrl != null && content.streamUrl != undefined || hasValidStreamUrls
 	}
 	
 }

@@ -3,6 +3,8 @@
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
 ///<reference path="./MovieNightAPI/ResolverCommon.ts" />
 ///<reference path="./MovieNightAPI/ProcessNode.ts" />
+///<reference path="./MovieNightAPI/Public.ts" />
+
 
 
 var colors = require('colors')
@@ -97,8 +99,10 @@ else
 			console.log("results: " + JSON.stringify(results, null, 4).red)
 			console.log("finished: ".blue, process.finished)
 		})
-		var vodlocker = new MovieNightAPI.Vodlocker_com()
-		vodlocker.scrape(options.scrape, head)
+
+		MovieNightAPI.scrape(options.scrape, head)
+		// var vodlocker = new MovieNightAPI.Vodlocker_com()
+		// vodlocker.scrape(options.scrape, head)
 		
 		//console.log("recognized: " + vodlocker.recognizesUrlMayContainContent(options.scrape))
 

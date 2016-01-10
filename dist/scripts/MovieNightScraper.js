@@ -1,70 +1,6 @@
-///<reference path="../../vendor/es6-promise.d.ts" />
-///<reference path="../../vendor/request.d.ts" />
-///<reference path="../../vendor/node.d.ts" />
-var Request = require('request');
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    //network stuff
-    var ResolverCommon;
-    (function (ResolverCommon) {
-        function get(url, res, process) {
-            return request({ 'method': 'GET', 'url': url }, res, process);
-        }
-        ResolverCommon.get = get;
-        function headOnly(url, res, process) {
-            return request({ 'method': 'HEAD', 'url': url }, res, process);
-        }
-        ResolverCommon.headOnly = headOnly;
-        function request(options, res, process) {
-            var q = new Promise(function (resolve, reject) {
-                var self = this;
-                var retryRequest = function (error, options) {
-                    var retryOnErrorCodes = ['ECONNRESET'];
-                    return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1));
-                };
-                //set retry parameters
-                options.maxAttempts = 15;
-                options.retryDelay = 300 + Math.random() * 7000;
-                var makeRequest = function (options) {
-                    Request(options, function (error, response, data) {
-                        if (error) {
-                            if (retryRequest(error, options)) {
-                                //decrement & reset retry parameters
-                                setTimeout(function () {
-                                    options.maxAttempts = options.maxAttempts - 1;
-                                    console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim);
-                                    options.retryDelay = 300 + Math.random() * 7000;
-                                    makeRequest(options);
-                                }, options.retryDelay);
-                            }
-                            else {
-                                console.log("REQUEST ERROR".red.bold.underline);
-                                console.log(error);
-                                // var internetError = new ResolverState(-4, self, { 'error': error, 'url': options.url })
-                                var failure = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InternetFailure, "The internet failed when looking up url <" + options.url + ">", this);
-                                reject(failure);
-                            }
-                        }
-                        else {
-                            resolve((options.method == 'HEAD') ? response.headers : data);
-                        }
-                    });
-                };
-                makeRequest(options);
-            });
-            q.catch(function (failure) {
-                console.log("network error failed".red);
-                process.processOne({ type: MovieNightAPI.ResultType.Error, error: failure });
-            });
-            return q;
-        }
-        ResolverCommon.request = request;
-    })(ResolverCommon = MovieNightAPI.ResolverCommon || (MovieNightAPI.ResolverCommon = {}));
-})(MovieNightAPI || (MovieNightAPI = {}));
-
-///<reference path="../ResolverCommon.ts" />
 ///<reference path="../../../vendor/es6-promise.d.ts" />
 ///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     var Vodlocker_com = (function () {
@@ -72,12 +8,15 @@ var MovieNightAPI;
             //Resolver properties
             this.domain = 'vodlocker.com';
             this.name = 'VodLocker.com';
-            this.needsClientFetch = true;
-            //internal properties
-            this.mediaIdRegExp = [/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/, /vodlocker\.com\/([^\/]*)$/];
+            this.needsClientRefetch = true;
+            this.mediaIdRegExp = [
+                /vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/,
+                /vodlocker\.com\/([^\/]+)$/
+            ];
         }
         Vodlocker_com.prototype.recognizesUrlMayContainContent = function (url) {
-            var matches = [/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
+            //[/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
+            var matches = this.mediaIdRegExp
                 .map(function (regex) { return regex.exec(url); })
                 .filter(function (regExpExecArray) { return regExpExecArray != null; });
             return matches.length > 0;
@@ -88,17 +27,18 @@ var MovieNightAPI;
             var url = ('http://vodlocker.com/embed-' + mediaIdentifier + '-650x370.html');
             MovieNightAPI.ResolverCommon.get(url, self, process)
                 .then(function (html) {
-                var result = RegExp.executeAll({
-                    'image': /image:[^"]*"(.+)"/,
-                    'streamUrl': /file:[^"]*"(.+)"/,
-                    'duration': /duration:[^"]*"([0-9]+)"/
-                }, html);
-                result['mimeType'] = 'video/mp4';
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                var fn = RegExp.curryExecute(html);
+                content.snapshotImageUrl = fn(/image:[^"]*"(.+)"/);
+                content.streamUrl = fn(/file:[^"]*"(.+)"/);
+                var durStr = fn(/duration:[^"]*"([0-9]+)"/);
+                content.duration = durStr ? +durStr : null;
+                content.mimeType = 'video/mp4';
                 var titleUrl = ('http://vodlocker.com/' + mediaIdentifier);
                 MovieNightAPI.ResolverCommon.get(titleUrl, self, process)
                     .then(function (titleHtml) {
-                    result['title'] = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml);
-                    MovieNightAPI.createContent(result, self, process);
+                    content.title = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml);
+                    MovieNightAPI.finishedWithContent(content, self, process);
                 });
             });
         };
@@ -119,6 +59,102 @@ var MovieNightAPI;
         return Vodlocker_com;
     })();
     MovieNightAPI.Vodlocker_com = Vodlocker_com;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    (function (ResolverErrorCode) {
+        ResolverErrorCode[ResolverErrorCode["InternetFailure"] = 0] = "InternetFailure";
+        ResolverErrorCode[ResolverErrorCode["InsufficientData"] = 1] = "InsufficientData";
+        ResolverErrorCode[ResolverErrorCode["UnexpectedLogic"] = 2] = "UnexpectedLogic";
+        ResolverErrorCode[ResolverErrorCode["InvalidMimeType"] = 3] = "InvalidMimeType";
+        ResolverErrorCode[ResolverErrorCode["NoResponders"] = 4] = "NoResponders";
+    })(MovieNightAPI.ResolverErrorCode || (MovieNightAPI.ResolverErrorCode = {}));
+    var ResolverErrorCode = MovieNightAPI.ResolverErrorCode;
+    var ResolverError = (function () {
+        function ResolverError(code, description, mediaOwnerInfo) {
+            var self = this;
+            self.code = code;
+            self.description = description;
+            self.taskName = mediaOwnerInfo ? mediaOwnerInfo.name : "MovieNight";
+        }
+        return ResolverError;
+    })();
+    MovieNightAPI.ResolverError = ResolverError;
+    (function (ResultType) {
+        ResultType[ResultType["Error"] = 0] = "Error";
+        ResultType[ResultType["Content"] = 1] = "Content";
+        ResultType[ResultType["Contents"] = 2] = "Contents";
+    })(MovieNightAPI.ResultType || (MovieNightAPI.ResultType = {}));
+    var ResultType = MovieNightAPI.ResultType;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+///<reference path="../../vendor/es6-promise.d.ts" />
+///<reference path="../../vendor/request.d.ts" />
+///<reference path="../../vendor/node.d.ts" />
+///<reference path="./Resolver.ts" />
+var Request = require('request');
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    //network stuff
+    var ResolverCommon;
+    (function (ResolverCommon) {
+        function get(url, mediaOwnerInfo, process) {
+            return request({ 'method': 'GET', 'url': url }, mediaOwnerInfo, process);
+        }
+        ResolverCommon.get = get;
+        function getMimeType(url, mediaOwnerInfo, process) {
+            return request({ 'method': 'HEAD', 'url': url, 'timeout': 5 * 1000 }, mediaOwnerInfo, process);
+        }
+        ResolverCommon.getMimeType = getMimeType;
+        function request(options, mediaOwnerInfo, process) {
+            var q = new Promise(function (resolve, reject) {
+                var self = this;
+                var retryRequest = function (error, options) {
+                    var retryOnErrorCodes = ['ECONNRESET', 'ETIMEDOUT'];
+                    return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1));
+                };
+                //set retry parameters
+                options.maxAttempts = 0;
+                options.retryDelay = 300 + Math.random() * 1000;
+                var makeRequest = function (options) {
+                    Request(options, function (error, response, data) {
+                        if (error) {
+                            if (retryRequest(error, options)) {
+                                //decrement & reset retry parameters
+                                setTimeout(function () {
+                                    options.maxAttempts = options.maxAttempts - 1;
+                                    console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim);
+                                    options.retryDelay = 300 + Math.random() * 1000;
+                                    makeRequest(options);
+                                }, options.retryDelay);
+                            }
+                            else {
+                                console.log("<<<");
+                                console.log("REQUEST ERROR".red.bold.underline);
+                                console.log(error);
+                                console.log(JSON.stringify(options, null, 4));
+                                console.log(">>>");
+                                // var internetError = new ResolverState(-4, self, { 'error': error, 'url': options.url })
+                                var failure = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InternetFailure, "The internet failed when looking up url <" + options.url + ">", mediaOwnerInfo);
+                                reject(failure);
+                            }
+                        }
+                        else {
+                            resolve((options.method == 'HEAD') ? response.headers['content-type'] : data);
+                        }
+                    });
+                };
+                makeRequest(options);
+            });
+            q.catch(function (failure) {
+                console.log("network error failed".red);
+                process.processOne({ type: MovieNightAPI.ResultType.Error, error: failure });
+            });
+            return q;
+        }
+        ResolverCommon.request = request;
+    })(ResolverCommon = MovieNightAPI.ResolverCommon || (MovieNightAPI.ResolverCommon = {}));
 })(MovieNightAPI || (MovieNightAPI = {}));
 
 var MovieNightAPI;
@@ -163,11 +199,119 @@ var MovieNightAPI;
     MovieNightAPI.ProcessNode = ProcessNode;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Raw = (function () {
+        function Raw() {
+        }
+        //resolver properties
+        Raw.prototype.recognizesUrlMayContainContent = function (url) {
+            return true;
+        };
+        Raw.prototype.scrape = function (url, process) {
+            var tempMediaOwner = {
+                domain: 'movienight.it',
+                name: 'MovieNight Scraper',
+                needsClientRefetch: false
+            };
+            MovieNightAPI.ResolverCommon.getMimeType(url, tempMediaOwner, process).then(function (mimeType) {
+                var isText = /(text\/)/.execute(mimeType) != null;
+                var ifMimeTypeIsValidCreate = function (theUrl, mType, mProcess) {
+                    if (MovieNightAPI.mimeTypeIsValid(mType)) {
+                        var content = new MovieNightAPI.Content(tempMediaOwner, '1');
+                        content.mimeType = mType;
+                        content.streamUrl = theUrl;
+                        MovieNightAPI.finishedWithContent(content, tempMediaOwner, mProcess);
+                        return true;
+                    }
+                    return false;
+                };
+                if (isText) {
+                    //parse for all urls
+                    MovieNightAPI.ResolverCommon.get(url, tempMediaOwner, process).then(function (html) {
+                        var alreadyUsedUrls = {};
+                        alreadyUsedUrls[url] = true;
+                        var urls1 = /((http|https):\/\/.*?)["';$]/g.executeAll(html);
+                        var urls2 = /((http|https):\\\/\\\/.*?)["';$]/g.executeAll(html).map(function (url) {
+                            var r = url.replace(/\\/g, '');
+                            return r;
+                        });
+                        var urls = urls1.concat(urls2)
+                            .filter(function (url) {
+                            if (!alreadyUsedUrls[url]) {
+                                alreadyUsedUrls[url] = true;
+                                return true;
+                            }
+                            return false;
+                        });
+                        if (urls.length == 0) {
+                            var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
+                            process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
+                        }
+                        else {
+                            urls.map(function (url) {
+                                return {
+                                    'url': url,
+                                    'process': process.newChildProcess()
+                                };
+                            })
+                                .forEach(function (pair) {
+                                MovieNightAPI.ResolverCommon.getMimeType(pair.url, tempMediaOwner, pair.process).then(function (mimeType) {
+                                    if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process)) {
+                                        MovieNightAPI.resolvers().forEach(function (resolver) {
+                                            resolver.scrape(pair.url, pair.process);
+                                        });
+                                    }
+                                });
+                            });
+                        }
+                    });
+                }
+                else {
+                    if (!ifMimeTypeIsValidCreate(url, mimeType, process)) {
+                        var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, ("Sorry, we were unable to recognize the mime type of the url " + url + "."));
+                        process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
+                    }
+                }
+            });
+        };
+        return Raw;
+    })();
+    MovieNightAPI.Raw = Raw;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+///<reference path="./Resolver.ts" />
+///<reference path="./resolvers/Raw.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    function resolvers() {
+        return [new MovieNightAPI.Vodlocker_com()];
+    }
+    MovieNightAPI.resolvers = resolvers;
+    function scrape(url, process) {
+        var responders = resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(url); });
+        if (responders.length == 0) {
+            var raw = new MovieNightAPI.Raw();
+            raw.scrape(url, process);
+        }
+        else {
+            responders.map(function (resolver) {
+                var childProcess = process.newChildProcess();
+                return { "resolver": resolver, "process": childProcess };
+            }).forEach(function (pair) {
+                pair.resolver.scrape(url, pair.process);
+            });
+        }
+    }
+    MovieNightAPI.scrape = scrape;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
 ///<reference path="./MovieNightAPI/ResolverCommon.ts" />
 ///<reference path="./MovieNightAPI/ProcessNode.ts" />
+///<reference path="./MovieNightAPI/Public.ts" />
 var colors = require('colors');
 // var MovieNightScraper = require('./MovieNightScraper.js')
 var cliArgs = require('command-line-args');
@@ -246,8 +390,7 @@ else {
             console.log("results: " + JSON.stringify(results, null, 4).red);
             console.log("finished: ".blue, process.finished);
         });
-        var vodlocker = new MovieNightAPI.Vodlocker_com();
-        vodlocker.scrape(options.scrape, head);
+        MovieNightAPI.scrape(options.scrape, head);
     }
     else {
         console.log(JSON.stringify(options, null, 4).white);
@@ -257,16 +400,6 @@ else {
 
 var MovieNightAPI;
 (function (MovieNightAPI) {
-    function objectCouldCreateContent(obj) {
-        var streamUrls = obj.streamUrls;
-        var hasValidStreamUrls = (streamUrls && streamUrls.every(function (value) {
-            return (value.quality != null &&
-                value.quality != undefined &&
-                value.streamUrl != null &&
-                value.streamUrl != undefined);
-        }));
-        return obj.streamUrl || hasValidStreamUrls;
-    }
     var removeThese = ['watchseries',
         'ch', 'x264', 'mp4', 'avi', 'flv',
         'DVDRip', 'HDTV', 'hdtv', 'XviD',
@@ -323,18 +456,12 @@ var MovieNightAPI;
     }
     MovieNightAPI.niceFilter = niceFilter;
     var Content = (function () {
-        function Content(obj, res) {
-            this.title = niceFilter(obj.title ? obj.title : "untitled");
-            this.image = obj.image;
-            this.duration = obj.duration;
-            this.streamUrl = obj.streamUrl;
-            this.streamUrls = obj.streamUrls;
-            this.mediaIdentifier = obj.mediaIdentifier;
-            this.needsClientIp = obj.needsClientIp;
-            this.mimeType = obj.mimeType;
-            this.uid = obj.uid ? obj.uid : (obj.mediaIdentifier + ":" + res.name);
-            this.domain = res.domain;
-            this.resolverName = res.name;
+        function Content(mediaOwner, mediaIdentifier) {
+            this.mediaIdentifier = mediaIdentifier;
+            this.title = "untitled";
+            this.needsClientRefetch = mediaOwner.needsClientRefetch;
+            this.domain = mediaOwner.domain;
+            this.mediaOwnerName = mediaOwner.name;
         }
         return Content;
     })();
@@ -344,23 +471,23 @@ var MovieNightAPI;
             "audio/mpeg", "video/twitch", "video/x-flv", "application/octet-stream",
             "rtmp"].filter(function (v) { return v == mimeType; }).length == 1);
     }
-    function createContent(obj, res, process) {
-        if (!objectCouldCreateContent(obj)) {
-            var message = "Resolver " + res.name + " cannot make Content with insufficient data." + JSON.stringify(obj);
-            var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InsufficientData, message, res);
+    MovieNightAPI.mimeTypeIsValid = mimeTypeIsValid;
+    function finishedWithContent(content, mediaOwnerInfo, process) {
+        content.uid = (mediaOwnerInfo.domain.replace(".", "_") + "|" + content.mediaIdentifier);
+        if (!contentIsValid(content)) {
+            var message = "Resolver " + mediaOwnerInfo.name + " cannot make Content with insufficient data." + JSON.stringify(content);
+            var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InsufficientData, message, mediaOwnerInfo);
             process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
         }
         else {
-            var content = new Content(obj, res);
             var reportInvalidMimeType = function () {
                 var message = "Mime type " + content.mimeType + " is not supported.";
-                var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InvalidMimeType, message, res);
+                var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InvalidMimeType, message, mediaOwnerInfo);
                 process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
             };
             if (!content.mimeType) {
                 var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl;
-                MovieNightAPI.ResolverCommon.headOnly(videoUrl, res, process).then(function (json) {
-                    var mimeType = json['content-type'];
+                MovieNightAPI.ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function (mimeType) {
                     if (!mimeTypeIsValid(mimeType)) {
                         reportInvalidMimeType();
                     }
@@ -377,77 +504,15 @@ var MovieNightAPI;
             }
         }
     }
-    MovieNightAPI.createContent = createContent;
+    MovieNightAPI.finishedWithContent = finishedWithContent;
+    function contentIsValid(content) {
+        var streamUrls = content.streamUrls;
+        var hasValidStreamUrls = (streamUrls && streamUrls.every(function (value) {
+            return (value.quality != null &&
+                value.quality != undefined &&
+                value.streamUrl != null &&
+                value.streamUrl != undefined);
+        }));
+        return content.streamUrl != null && content.streamUrl != undefined || hasValidStreamUrls;
+    }
 })(MovieNightAPI || (MovieNightAPI = {}));
-
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    function resolvers() {
-        return [new MovieNightAPI.Vodlocker_com()];
-    }
-    function scrape(url, process) {
-        var responders = resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(url); });
-        if (responders.length == 0) {
-            var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
-            process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
-        }
-        else {
-            responders.map(function (resolver) {
-                var childProcess = process.newChildProcess();
-                return { "resolver": resolver, "process": childProcess };
-            }).forEach(function (pair) {
-                pair.resolver.scrape(url, pair.process);
-            });
-        }
-    }
-    MovieNightAPI.scrape = scrape;
-})(MovieNightAPI || (MovieNightAPI = {}));
-
-var MovieNightAPI;
-(function (MovieNightAPI) {
-    (function (ResolverErrorCode) {
-        ResolverErrorCode[ResolverErrorCode["InternetFailure"] = 0] = "InternetFailure";
-        ResolverErrorCode[ResolverErrorCode["InsufficientData"] = 1] = "InsufficientData";
-        ResolverErrorCode[ResolverErrorCode["UnexpectedLogic"] = 2] = "UnexpectedLogic";
-        ResolverErrorCode[ResolverErrorCode["InvalidMimeType"] = 3] = "InvalidMimeType";
-        ResolverErrorCode[ResolverErrorCode["NoResponders"] = 4] = "NoResponders";
-    })(MovieNightAPI.ResolverErrorCode || (MovieNightAPI.ResolverErrorCode = {}));
-    var ResolverErrorCode = MovieNightAPI.ResolverErrorCode;
-    var ResolverError = (function () {
-        function ResolverError(code, description, resolver) {
-            var self = this;
-            self.code = code;
-            self.description = description;
-            self.taskName = resolver ? resolver.name : "MovieNight";
-        }
-        return ResolverError;
-    })();
-    MovieNightAPI.ResolverError = ResolverError;
-    (function (ResultType) {
-        ResultType[ResultType["Error"] = 0] = "Error";
-        ResultType[ResultType["Content"] = 1] = "Content";
-        ResultType[ResultType["Contents"] = 2] = "Contents";
-    })(MovieNightAPI.ResultType || (MovieNightAPI.ResultType = {}));
-    var ResultType = MovieNightAPI.ResultType;
-})(MovieNightAPI || (MovieNightAPI = {}));
-
-RegExp.prototype.execute = function (str) {
-    var results = this.exec(str);
-    if (results) {
-        return results[1];
-    }
-    return null;
-};
-RegExp.executeAll = function (obj, str) {
-    var self = this;
-    if (str === undefined) {
-        throw new Error("executeAll from " + self.host + " has no string input");
-    }
-    var acc = {};
-    return Object.keys(obj).reduce(function (l, regKey) {
-        var regex = obj[regKey];
-        var result = regex.execute(str);
-        l[regKey] = result;
-        return l;
-    }, acc);
-};

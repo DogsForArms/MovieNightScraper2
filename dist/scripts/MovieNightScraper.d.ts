@@ -1,27 +1,66 @@
-/// <reference path="../../vendor/es6-promise.d.ts" />
-/// <reference path="../../vendor/request.d.ts" />
-/// <reference path="../../vendor/node.d.ts" />
-declare var Request: any;
-declare module MovieNightAPI {
-    module ResolverCommon {
-        function get(url: string, res: Resolver<any>, process: ProcessNode): Promise<string>;
-        function headOnly(url: string, res: Resolver<any>, process: ProcessNode): Promise<string>;
-        function request(options: any, res: Resolver<any>, process: ProcessNode): Promise<string>;
-    }
-}
-
-/// <reference path="../ResolverCommon.d.ts" />
 /// <reference path="../../../vendor/es6-promise.d.ts" />
 /// <reference path="../../../vendor/colors.d.ts" />
 declare module MovieNightAPI {
     class Vodlocker_com implements Resolver<string> {
         domain: string;
         name: string;
-        needsClientFetch: boolean;
+        needsClientRefetch: boolean;
         mediaIdRegExp: RegExp[];
         recognizesUrlMayContainContent(url: string): boolean;
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
         scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+declare module MovieNightAPI {
+    enum ResolverErrorCode {
+        InternetFailure = 0,
+        InsufficientData = 1,
+        UnexpectedLogic = 2,
+        InvalidMimeType = 3,
+        NoResponders = 4,
+    }
+    class ResolverError {
+        code: ResolverErrorCode;
+        description: string;
+        taskName: string;
+        constructor(code: ResolverErrorCode, description: string, mediaOwnerInfo?: MediaOwnerInfo);
+    }
+    enum ResultType {
+        Error = 0,
+        Content = 1,
+        Contents = 2,
+    }
+    interface Result {
+        type: ResultType;
+        content?: Content;
+        contents?: Content[];
+        error?: ResolverError;
+    }
+    interface MediaOwnerInfo {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+    }
+    interface MediaFinder {
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+    interface Resolver<T> extends MediaFinder, MediaOwnerInfo {
+        resolveId(mediaIdentifier: T, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../vendor/es6-promise.d.ts" />
+/// <reference path="../../vendor/request.d.ts" />
+/// <reference path="../../vendor/node.d.ts" />
+/// <reference path="Resolver.d.ts" />
+declare var Request: any;
+declare module MovieNightAPI {
+    module ResolverCommon {
+        function get(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
+        function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
+        function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
     }
 }
 
@@ -42,11 +81,26 @@ declare module MovieNightAPI {
     }
 }
 
+declare module MovieNightAPI {
+    class Raw implements MediaFinder {
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="Resolver.d.ts" />
+/// <reference path="resolvers/Raw.d.ts" />
+declare module MovieNightAPI {
+    function resolvers(): Resolver<string>[];
+    function scrape(url: string, process: ProcessNode): void;
+}
+
 /// <reference path="../vendor/colors.d.ts" />
 /// <reference path="../vendor/command-line-args.d.ts" />
 /// <reference path="MovieNightAPI/resolvers/Vodlocker_com.d.ts" />
 /// <reference path="MovieNightAPI/ResolverCommon.d.ts" />
 /// <reference path="MovieNightAPI/ProcessNode.d.ts" />
+/// <reference path="MovieNightAPI/Public.d.ts" />
 declare var colors: any;
 declare var cliArgs: CommandLineArgs;
 declare var optionalCommandLineConfigs: CommandLineConfig[];
@@ -63,70 +117,20 @@ declare module MovieNightAPI {
         streamUrl: string;
     }
     class Content {
+        mediaIdentifier: string;
         title: string;
-        image: string;
+        snapshotImageUrl: string;
+        posterImageUrl: string;
         duration: number;
         streamUrl: string;
         streamUrls: LabeledStreams[];
-        mediaIdentifier: string;
-        needsClientIp: boolean;
         mimeType: string;
         uid: string;
+        needsClientRefetch: boolean;
         domain: string;
-        resolverName: string;
-        constructor(obj: any, res: MovieNightAPI.Resolver<any>);
+        mediaOwnerName: string;
+        constructor(mediaOwner: MediaOwnerInfo, mediaIdentifier: string);
     }
-    function createContent(obj: any, res: Resolver<any>, process: ProcessNode): void;
-}
-
-declare module MovieNightAPI {
-    function scrape(url: string, process: ProcessNode): void;
-}
-
-declare module MovieNightAPI {
-    enum ResolverErrorCode {
-        InternetFailure = 0,
-        InsufficientData = 1,
-        UnexpectedLogic = 2,
-        InvalidMimeType = 3,
-        NoResponders = 4,
-    }
-    class ResolverError {
-        code: ResolverErrorCode;
-        description: string;
-        taskName: string;
-        constructor(code: ResolverErrorCode, description: string, resolver?: Resolver<any>);
-    }
-    enum ResultType {
-        Error = 0,
-        Content = 1,
-        Contents = 2,
-    }
-    interface Result {
-        type: ResultType;
-        content?: Content;
-        contents?: Content[];
-        error?: ResolverError;
-    }
-    interface Resolver<TMediaId> {
-        domain: string;
-        name: string;
-        needsClientFetch: boolean;
-        recognizesUrlMayContainContent(url: string): boolean;
-        resolveId(mediaIdentifier: TMediaId, process: ProcessNode): void;
-        scrape(url: string, process: ProcessNode): void;
-    }
-}
-
-interface RegExp {
-    execute(str: string): string;
-}
-interface StringToRegExpMap {
-    [s: string]: RegExp;
-}
-interface StringToStringMap {
-    [s: string]: string;
-}
-interface RegExpConstructor {
-    executeAll(obj: StringToRegExpMap, str: string): StringToStringMap;
+    function mimeTypeIsValid(mimeType: string): boolean;
+    function finishedWithContent(content: Content, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): void;
 }

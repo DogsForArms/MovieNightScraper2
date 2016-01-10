@@ -15,12 +15,12 @@ module MovieNightAPI
 
 		taskName: string;
 
-		constructor(code: ResolverErrorCode, description: string, resolver?: Resolver<any>) 
+		constructor(code: ResolverErrorCode, description: string, mediaOwnerInfo?: MediaOwnerInfo) 
 		{
 			var self = this
 			self.code = code
 			self.description = description
-			self.taskName = resolver ? resolver.name : "MovieNight"
+			self.taskName = mediaOwnerInfo ? mediaOwnerInfo.name : "MovieNight"
 		}
 	}
 
@@ -35,16 +35,22 @@ module MovieNightAPI
 		contents?: Content[]
 		error?: ResolverError
 	}
-	export interface Resolver<TMediaId> 
+	
+
+	export interface MediaOwnerInfo
 	{
 		domain: string
 		name: string
-		needsClientFetch: boolean
-
+		needsClientRefetch: boolean
+	}
+	export interface MediaFinder // extends MediaOwnerInfo
+	{
 		recognizesUrlMayContainContent(url: string): boolean
-		resolveId(mediaIdentifier: TMediaId, process: ProcessNode): void
 		scrape(url: string, process: ProcessNode): void
-
+	}
+	export interface Resolver<T> extends MediaFinder, MediaOwnerInfo
+	{
+		resolveId(mediaIdentifier: T, process: ProcessNode): void
 	}
 
 }

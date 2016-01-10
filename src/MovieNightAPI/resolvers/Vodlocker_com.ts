@@ -1,5 +1,6 @@
 ///<reference path="../../../vendor/es6-promise.d.ts" />
 ///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
 module MovieNightAPI 
 {
 
@@ -9,17 +10,22 @@ module MovieNightAPI
 		//Resolver properties
 		domain = 'vodlocker.com'
 		name = 'VodLocker.com'
-		needsClientFetch = true
+		needsClientRefetch = true
 
-		//internal properties
-		mediaIdRegExp:RegExp[] = [ /vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/, /vodlocker\.com\/([^\/]*)$/]
+
+		mediaIdRegExp:RegExp[] = [ 
+				/vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/,
+				/vodlocker\.com\/([^\/]+)$/
+			]
 
 		recognizesUrlMayContainContent(url: string): boolean 
 		{
-			var matches = [/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
+			//[/vodlocker\.com\/?$/].concat(this.mediaIdRegExp)
+			var matches = this.mediaIdRegExp 
 				.map(function(regex) { return regex.exec(url) })
 				.filter(function(regExpExecArray) 
 				{ return regExpExecArray != null })
+
 			return matches.length > 0
 		}
 
@@ -31,20 +37,21 @@ module MovieNightAPI
 			ResolverCommon.get(url, self, process)
 				.then(function(html: string)
 				{
-					var result = RegExp.executeAll({
-						'image': /image:[^"]*"(.+)"/,
-						'streamUrl': /file:[^"]*"(.+)"/,
-						'duration': /duration:[^"]*"([0-9]+)"/
-					}, html)
+					var content = new Content(self, mediaIdentifier)
+					var fn = RegExp.curryExecute(html)
 
-					result['mimeType'] = 'video/mp4'
+					content.snapshotImageUrl = fn(/image:[^"]*"(.+)"/)
+					content.streamUrl = fn(/file:[^"]*"(.+)"/)
+					var durStr = fn(/duration:[^"]*"([0-9]+)"/) 
+					content.duration = durStr ? +durStr : null
+					content.mimeType = 'video/mp4'
 
 					var titleUrl = ('http://vodlocker.com/' + mediaIdentifier)
 					ResolverCommon.get(titleUrl, self, process)
 					.then(function(titleHtml: string){
 
-						result['title'] = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml)	
-						createContent(result, self, process)
+						content.title = /<input\s*type="hidden"\s*name="fname"\s*value="([^"]*)/.execute(titleHtml)
+						finishedWithContent(content, self, process)
 
 					})
 

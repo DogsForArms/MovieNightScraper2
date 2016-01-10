@@ -1,7 +1,9 @@
+///<reference path="./Resolver.ts" />
+///<reference path="./resolvers/Raw.ts" />
 
 module MovieNightAPI
 {
-	function resolvers(): Resolver<string>[]
+	export function resolvers(): Resolver<string>[]
 	{
 		return [new Vodlocker_com()]
 	}
@@ -11,8 +13,8 @@ module MovieNightAPI
 		var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(url) })
 
 		if (responders.length == 0) {
-			var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")
-			process.processOne({ 'type': ResultType.Error, 'error': noResponse })
+			var raw = new Raw()
+			raw.scrape(url, process)
 		}
 		else
 		{

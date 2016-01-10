@@ -1,4 +1,6 @@
 ///<reference path="./Resolver.ts" />
+
+///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
 ///<reference path="./resolvers/Allmyvideos_net.ts" />
 
@@ -6,7 +8,7 @@ module MovieNightAPI
 {
 	export function resolvers(): Resolver<string>[]
 	{
-		return [new Vodlocker_com(), new Allmyvideos_net()]
+		return [new Vodlocker_com(), new Allmyvideos_net(), new Gorillavid_in()]
 	}
 
 	export function scrape(url: string, process: ProcessNode)

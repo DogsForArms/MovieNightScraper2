@@ -72,11 +72,22 @@ module MovieNightAPI
 								})
 								.forEach(function(pair)  {
 									ResolverCommon.getMimeType(pair.url, tempMediaOwner, pair.process).then(function(mimeType){
-										if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process))
-										{
-											resolvers().forEach(function(resolver) {
-												resolver.scrape(pair.url, pair.process)
-											})
+										if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process)) {
+											var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(pair.url) })
+											if (responders.length == 0) {
+												var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")
+												pair.process.processOne({ 'type': ResultType.Error, 'error': noResponse })
+											}
+											else 
+											{
+												responders
+													.map(function(resolver) {
+														return { 'resolver': resolver, 'process': pair.process.newChildProcess() }
+													})
+													.forEach(function(r) {
+														r.resolver.scrape(pair.url, r.process)
+													})
+											}
 										}
 									})
 								})

@@ -82,9 +82,8 @@ module MovieNightAPI
 	export function extractMediaId(res: Resolver<string>, url: string, process?: ProcessNode) : string
 	{
 		var matches = res.mediaIdExtractors
-			.map(function(regex) { return regex.execute(url) })
-			.filter(function(res)
-			{ return res != null })
+			.map(function(f){ return f(url) })
+			.filter(function(str) { return str != null })
 
 		var mediaIdentifier = matches[0]
 		if (process) 
@@ -102,6 +101,9 @@ module MovieNightAPI
 				res.resolveId(mediaIdentifier, process)
 			}
 		}
+		// console.log(url)
+		// console.log(res.mediaIdExtractors)
+		// console.log("mediaIdentifier: " + mediaIdentifier)
 		return mediaIdentifier
 	}
 

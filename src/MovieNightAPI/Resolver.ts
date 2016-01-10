@@ -51,7 +51,7 @@ module MovieNightAPI
 	export interface Resolver<T> extends MediaFinder, MediaOwnerInfo
 	{
 		resolveId(mediaIdentifier: T, process: ProcessNode): void
-		mediaIdExtractors: RegExp[]
+		mediaIdExtractors: ((url: string) => (string))[]
 	}
 
 }

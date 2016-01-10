@@ -14,7 +14,7 @@ module MovieNightAPI
 
 		recognizesUrlMayContainContent(url: string): boolean
 		{
-			return extractMediaId(this, url) != null
+			return extractMediaId(this, url) != undefined
 		}
 
 		resolveId(mediaIdentifier: string, process: ProcessNode)
@@ -79,14 +79,15 @@ module MovieNightAPI
 		}
 
 
-		mediaIdExtractors: RegExp[] = [
-			/allmyvideos\.net\/v\/(.*)/,
-			// /allmyvideos\.net\/embed-(.*?)-/,
+		mediaIdExtractors = [
+			function(url:string){return /allmyvideos\.net\/v\/(.*)/.execute(url)},
+			function(url:string){return /allmyvideos\.net\/embed-(.*?)-/.execute(url)},
 			// /allmyvideos\.net\/(.*)/
-		]	
+		]
 
 		scrape(url: string, process: ProcessNode)
 		{
+			console.log("america".america + url)
 			extractMediaId(this, url, process)
 		}
 

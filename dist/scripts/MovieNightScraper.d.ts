@@ -17,7 +17,7 @@ declare module MovieNightAPI {
         needsClientRefetch: boolean;
         recognizesUrlMayContainContent(url: string): boolean;
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
-        mediaIdExtractors: RegExp[];
+        mediaIdExtractors: ((url: string) => string)[];
         scrape(url: string, process: ProcessNode): void;
     }
 }
@@ -58,7 +58,7 @@ declare module MovieNightAPI {
     }
     interface Resolver<T> extends MediaFinder, MediaOwnerInfo {
         resolveId(mediaIdentifier: T, process: ProcessNode): void;
-        mediaIdExtractors: RegExp[];
+        mediaIdExtractors: ((url: string) => (string))[];
     }
 }
 
@@ -92,6 +92,21 @@ declare module MovieNightAPI {
         newChildProcess(): ProcessNode;
         process(results: Result[]): void;
         processOne(result: Result): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Gorillavid_in implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        recognizesUrlMayContainContent(url: string): boolean;
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        scrape(url: string, process: ProcessNode): void;
     }
 }
 
@@ -140,12 +155,13 @@ declare module MovieNightAPI {
         needsClientRefetch: boolean;
         recognizesUrlMayContainContent(url: string): boolean;
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
-        mediaIdExtractors: RegExp[];
+        mediaIdExtractors: ((url: string) => string)[];
         scrape(url: string, process: ProcessNode): void;
     }
 }
 
 /// <reference path="Resolver.d.ts" />
+/// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
 /// <reference path="resolvers/Allmyvideos_net.d.ts" />
 declare module MovieNightAPI {

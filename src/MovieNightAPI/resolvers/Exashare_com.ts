@@ -49,7 +49,8 @@ module MovieNightAPI
 
 
 		mediaIdExtractors = [
-			function(url: string) { return /exashare\.com\/(.*)/.execute(url) },
+			function(url: string) { return /exashare\.com\/embed-([a-zA-Z\d]*)?-/.execute(url) },
+			function(url: string) { return /exashare\.com\/([a-zA-Z\d]*)/.execute(url) }
 		]
 		scrape(url: string, process: ProcessNode)
 		{

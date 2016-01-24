@@ -591,14 +591,67 @@ var MovieNightAPI;
     MovieNightAPI.Allmyvideos_net = Allmyvideos_net;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+///<reference path="../Resolver.ts" />
+///<reference path="../ResolverCommon.ts" />
+///<reference path="../ProcessNode.ts" />
+///<reference path="../Content.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Exashare_com = (function () {
+        function Exashare_com() {
+            this.domain = "exashare.com";
+            this.name = "Exashare";
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /exashare\.com\/(.*)/.execute(url); },
+            ];
+        }
+        Exashare_com.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Exashare_com.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url0 = ("http://exashare.com/" + mediaIdentifier + ".html");
+            //..todo
+            MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
+                var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                var title = postParams.fname;
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = title;
+                setTimeout(function () {
+                    var url = ("http://exashare.com/embed-" + mediaIdentifier + "-960x540.html");
+                    MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
+                        var fn = RegExp.curryExecute(html);
+                        console.log("HI");
+                        content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/);
+                        content.streamUrl = fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/);
+                        var durationStr = fn(/duration:.*?["'](\d+)?["']/);
+                        content.duration = durationStr ? +durationStr : null;
+                        MovieNightAPI.finishedWithContent(content, self, process);
+                    });
+                }, 10 * 1000);
+            });
+        };
+        Exashare_com.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Exashare_com;
+    })();
+    MovieNightAPI.Exashare_com = Exashare_com;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
 ///<reference path="./resolvers/Allmyvideos_net.ts" />
+///<reference path="./resolvers/Exashare_com.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
-        return [new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(), new MovieNightAPI.Gorillavid_in()];
+        return [new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(), new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com()];
     }
     MovieNightAPI.resolvers = resolvers;
     function scrape(url, process) {

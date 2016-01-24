@@ -160,10 +160,30 @@ declare module MovieNightAPI {
     }
 }
 
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+/// <reference path="../Resolver.d.ts" />
+/// <reference path="../ResolverCommon.d.ts" />
+/// <reference path="../ProcessNode.d.ts" />
+/// <reference path="../Content.d.ts" />
+declare module MovieNightAPI {
+    class Exashare_com implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        recognizesUrlMayContainContent(url: string): boolean;
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        mediaIdExtractors: ((url: string) => string)[];
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
 /// <reference path="resolvers/Allmyvideos_net.d.ts" />
+/// <reference path="resolvers/Exashare_com.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;

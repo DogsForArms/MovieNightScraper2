@@ -3,12 +3,13 @@
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
 ///<reference path="./resolvers/Allmyvideos_net.ts" />
+///<reference path="./resolvers/Exashare_com.ts" />
 
 module MovieNightAPI
 {
 	export function resolvers(): Resolver<string>[]
 	{
-		return [new Vodlocker_com(), new Allmyvideos_net(), new Gorillavid_in()]
+		return [new Vodlocker_com(), new Allmyvideos_net(), new Gorillavid_in(), new Exashare_com()]
 	}
 
 	export function scrape(url: string, process: ProcessNode)

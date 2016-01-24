@@ -63,11 +63,6 @@ module MovieNightAPI
 							}
 							catch (e){console.log(e)}
 							
-
-							// console.log(url)
-							// console.log(html.inverse)
-							// console.log("srcs: " + srcs)
-							// console.log(JSON.stringify(content, null, 4).red.inverse)
 							finishedWithContent(content, self, process)
 						})
 

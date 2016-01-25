@@ -28,7 +28,6 @@ module MovieNightAPI
 		{
 			var self = this
 			var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier)
-			// var url = ('https://bakavideo.tv/embed/' + mediaIdentifier)
 
 			ResolverCommon.get(url, self, process).then(function(jsonStr){
 				

@@ -25,9 +25,9 @@ module MovieNightAPI
 			ResolverCommon.get(url0, self, process).then(function(html0){
 				console.log(html0.blue.italic)
 				var postParams = getHiddenPostParams(html0)
-				// console.log(JSON.stringify(postParams, null, 4).red)
+				
 				ResolverCommon.formPost(url0, postParams, self, process).then(function(html){
-					// console.log(html)
+				
 					var fn = RegExp.curryExecute(html)
 					var content = new Content(self, mediaIdentifier)
 

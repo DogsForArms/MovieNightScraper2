@@ -53,20 +53,7 @@ module MovieNightAPI
 		]
 
 		scrape(url: string, process: ProcessNode) {
-			var self = this
 			extractMediaId(this, url, process)
-
-			// if (mediaId != null){
-			// 	self.resolveId(mediaId, process)
-			// }
-			// else
-			// {
-			// 	var error = new ResolverError(
-			// 		ResolverErrorCode.InsufficientData, 
-			// 		("Could not get a MediaId from the url " + url), 
-			// 		self)
-			// 	process.processOne({ type: ResultType.Error, error: error })
-			// }
 		}
 	}
 }

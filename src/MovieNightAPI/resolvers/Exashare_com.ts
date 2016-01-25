@@ -6,6 +6,7 @@
 ///<reference path="../ProcessNode.ts" />
 ///<reference path="../Content.ts" />
 
+//HAS PROBLEMS IN VIDEOJS
 module MovieNightAPI
 {
 	export class Exashare_com implements Resolver<string>
@@ -47,11 +48,12 @@ module MovieNightAPI
 			})
 		}
 
-
 		mediaIdExtractors = [
-			function(url: string) { return /exashare\.com\/embed-([a-zA-Z\d]*)?-/.execute(url) },
-			function(url: string) { return /exashare\.com\/([a-zA-Z\d]*)/.execute(url) }
+			function(url: string) { return /halazoun\.info\/embed-([a-zA-Z\d]+)?-/.execute(url)},
+			function(url: string) { return /exashare\.com\/embed-([a-zA-Z\d]+)?-/.execute(url) },
+			function(url: string) { return /exashare\.com\/([a-zA-Z\d]+)?(\.html)?$/.execute(url) }
 		]
+
 		scrape(url: string, process: ProcessNode)
 		{
 			extractMediaId(this, url, process)

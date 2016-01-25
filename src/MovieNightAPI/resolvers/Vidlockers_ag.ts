@@ -48,7 +48,7 @@ module MovieNightAPI
 		}
 
 		mediaIdExtractors = [
-			function(url) { return /vidlockers\.ag\/([a-zA-Z\d]+)?(\/.*)?(\.html)?$/.execute(url) }
+			function(url: string) { return /vidlockers\.ag\/([a-zA-Z\d]+)?(\/.*)?(\.html)?$/.execute(url) }
 		]
 		scrape(url: string, process: ProcessNode) {
 			extractMediaId(this, url, process)

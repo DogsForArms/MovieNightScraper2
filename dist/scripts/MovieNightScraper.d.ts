@@ -193,7 +193,27 @@ declare module MovieNightAPI {
         needsClientRefetch: boolean;
         recognizesUrlMayContainContent(url: string): boolean;
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
-        mediaIdExtractors: ((url: any) => string)[];
+        mediaIdExtractors: ((url: string) => string)[];
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+/// <reference path="../Resolver.d.ts" />
+/// <reference path="../ResolverCommon.d.ts" />
+/// <reference path="../ProcessNode.d.ts" />
+/// <reference path="../Content.d.ts" />
+declare var Base64: any;
+declare module MovieNightAPI {
+    class Bakavideo_tv implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        recognizesUrlMayContainContent(url: string): boolean;
+        mediaIdExtractors: ((url: string) => string)[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
         scrape(url: string, process: ProcessNode): void;
     }
 }
@@ -204,6 +224,7 @@ declare module MovieNightAPI {
 /// <reference path="resolvers/Allmyvideos_net.d.ts" />
 /// <reference path="resolvers/Exashare_com.d.ts" />
 /// <reference path="resolvers/Vidlockers_ag.d.ts" />
+/// <reference path="resolvers/Bakavideo_tv.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;

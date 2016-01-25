@@ -9,7 +9,6 @@ RegExp.prototype.execute = function(str: string) {
 RegExp.prototype.executeAll = function(str: string): string[]
 {
 	var self = this
-	
 	var results: string[] = []
 
 	var val: string

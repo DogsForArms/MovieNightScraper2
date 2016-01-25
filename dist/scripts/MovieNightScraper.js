@@ -591,9 +591,9 @@ var MovieNightAPI;
             this.name = "Exashare";
             this.needsClientRefetch = true;
             this.mediaIdExtractors = [
-                function (url) { return /halazoun\.info\/embed-([a-zA-Z\d]+)?-/.execute(url); },
-                function (url) { return /exashare\.com\/embed-([a-zA-Z\d]+)?-/.execute(url); },
-                function (url) { return /exashare\.com\/([a-zA-Z\d]+)?(\.html)?$/.execute(url); }
+                function (url) { return /halazoun\.info\/embed-([a-zA-Z\d]+?)-/.execute(url); },
+                function (url) { return /exashare\.com\/embed-([a-zA-Z\d]+?)-/.execute(url); },
+                function (url) { return /exashare\.com\/([a-zA-Z\d]+?)(\.html)?$/.execute(url); }
             ];
         }
         Exashare_com.prototype.recognizesUrlMayContainContent = function (url) {
@@ -680,16 +680,72 @@ var MovieNightAPI;
     MovieNightAPI.Vidlockers_ag = Vidlockers_ag;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+///<reference path="../Resolver.ts" />
+///<reference path="../ResolverCommon.ts" />
+///<reference path="../ProcessNode.ts" />
+///<reference path="../Content.ts" />
+var Base64 = require('../../node_modules/js-base64/base64.js').Base64;
+// var Base64 = require('js-base64')
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Bakavideo_tv = (function () {
+        function Bakavideo_tv() {
+            this.domain = "Bakavideo.tv";
+            this.name = "BakavideoTv";
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /bakavideo\.tv\/embed\/([a-zA-Z\d]+?)$/.execute(url); }
+            ];
+        }
+        Bakavideo_tv.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Bakavideo_tv.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier);
+            // var url = ('https://bakavideo.tv/embed/' + mediaIdentifier)
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (jsonStr) {
+                var streamUrls = null;
+                try {
+                    var json = JSON.parse(jsonStr);
+                    var html = Base64.decode(json.content);
+                    console.log(html.red);
+                    var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                    streamUrls = /<source(.*?)>/g.executeAll(html).map(function (component) {
+                        var quality = /data-res="(.*?)"/.execute(component);
+                        var url = /src="(.*?)"/.execute(component);
+                        return { 'quality': quality, 'streamUrl': url };
+                    });
+                }
+                catch (e) {
+                    console.log(e);
+                }
+                content.streamUrls = streamUrls;
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Bakavideo_tv.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Bakavideo_tv;
+    })();
+    MovieNightAPI.Bakavideo_tv = Bakavideo_tv;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
 ///<reference path="./resolvers/Allmyvideos_net.ts" />
 ///<reference path="./resolvers/Exashare_com.ts" />
 ///<reference path="./resolvers/Vidlockers_ag.ts" />
+///<reference path="./resolvers/Bakavideo_tv.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
-        return [new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(), new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(), new MovieNightAPI.Vidlockers_ag()];
+        return [new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(), new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(), new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv()];
     }
     MovieNightAPI.resolvers = resolvers;
     function scrape(url, process) {

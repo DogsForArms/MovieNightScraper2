@@ -785,6 +785,50 @@ var MovieNightAPI;
     MovieNightAPI.Powvideo_net = Powvideo_net;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+///<reference path="../Resolver.ts" />
+///<reference path="../ResolverCommon.ts" />
+///<reference path="../ProcessNode.ts" />
+///<reference path="../Content.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Bestreams_net = (function () {
+        function Bestreams_net() {
+            this.domain = "bestreams.net";
+            this.name = "Bestreams";
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /bestreams\.net\/([a-zA-Z\d]+)/.execute(url); }
+            ];
+        }
+        Bestreams_net.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Bestreams_net.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://bestreams.net/' + mediaIdentifier);
+            console.log(url.bold);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html0) {
+                // console.log(html0.red)
+                var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                console.log(postParams);
+                setTimeout(function () {
+                    MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
+                        console.log(html.blue.inverse);
+                    });
+                }, 4000);
+            });
+        };
+        Bestreams_net.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Bestreams_net;
+    })();
+    MovieNightAPI.Bestreams_net = Bestreams_net;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -793,6 +837,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Vidlockers_ag.ts" />
 ///<reference path="./resolvers/Bakavideo_tv.ts" />
 ///<reference path="./resolvers/Powvideo_net.ts" />
+///<reference path="./resolvers/Bestreams_net.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -800,7 +845,7 @@ var MovieNightAPI;
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
             new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(),
             new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv(),
-            new MovieNightAPI.Powvideo_net()
+            new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net()
         ];
         return resolvers;
     }

@@ -94,19 +94,29 @@ else
 {
 	if (options.scrape)
 	{
+		// console.log(this.name())
+
+		var resultsCount = 0
 		var head = new MovieNightAPI.ProcessNode(function(results: MovieNightAPI.Result[], process: MovieNightAPI.ProcessNode) {
-			console.log("scrape result: " + options.scrape)
-			console.log("results: " + JSON.stringify(results, null, 4).red)
-			console.log("finished: ".blue, process.finished)
+			// console.log("scrape result: " + options.scrape)
+			// console.log("results: " + JSON.stringify(results, null, 4).red)
+			// console.log("finished: ".blue, process.finished)
+			results.forEach(function(result){
+				if (result.type == MovieNightAPI.ResultType.Content)
+				{
+					resultsCount++
+					console.log((resultsCount + ') ' + result.content.title).green.bold)
+					console.log(JSON.stringify(result.content,null,4).green)
+				}
+			})
+
+			if (process.finished)
+			{
+				console.log("finished: with ".blue , resultsCount)
+			}
 		})
 
 		MovieNightAPI.scrape(options.scrape, head)
-		// var vodlocker = new MovieNightAPI.Vodlocker_com()
-		// vodlocker.scrape(options.scrape, head)
-		
-		//console.log("recognized: " + vodlocker.recognizesUrlMayContainContent(options.scrape))
-
-		// vodlocker.scrape(url, head)
 
 	} else
 	{
@@ -114,20 +124,24 @@ else
 		console.warn("No command was run.  Use --help for usage.".red.bold)
 	}
 	
-	// var i = 0
-	// function print(value) {
-	// 	var color;
-	// 	if (value.code == 2) {
-	// 		color = 'blue'
-	// 	} else
-	// 	if (value.code > 0) {
-	// 		color = 'green'
-	// 	} else
-	// 	if (value.code == 0) {
-	// 		color = 'yellow'
-	// 	} else {
-	// 		color = 'red'
-	// 	}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 

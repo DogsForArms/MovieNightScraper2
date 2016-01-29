@@ -38,7 +38,7 @@ module MovieNightAPI
 					ResolverCommon.get(url, self, process).then(function(html){
 
 						var postParams = getHiddenPostParams(html)
-						console.log(JSON.stringify(postParams, null, 4).italic)
+						// console.log(JSON.stringify(postParams, null, 4).italic)
 						ResolverCommon.formPost(url, postParams, self, process).then(function(html){
 							// console.log(html.bgCyan)
 							var fn = RegExp.curryExecute(html)

@@ -11,6 +11,10 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Exashare_com.ts",
+        "src/MovieNightAPI/resolvers/Bestreams_net.ts",
+        "src/MovieNightAPI/resolvers/Bakavideo_tv.ts",
+        "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
         "src/MovieNightAPI/resolvers/Gorillavid_in.ts",
         "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
         "src/MovieNightAPI/resolvers/Raw.ts",
@@ -21,6 +25,7 @@
         "src/MovieNightAPI/Resolver.ts",
         "src/MovieNightAPI/ResolverCommon.ts",
         "src/Tools/RegExp.ts",
+        "src/Tools/Logging.ts",
         "src/CmdLine.ts"
     ]
 }

@@ -1,6 +1,32 @@
 module MovieNightAPI 
 {
 
+// Mark - Stream
+	export enum StreamType
+	{
+		Url, 
+		Rtmp
+	}
+	export interface Stream
+	{
+		name?: string
+		type: StreamType
+		isValid() : boolean
+	}
+	export class RtmpStream implements Stream
+	{
+		type = StreamType.Rtmp
+		url: string
+
+		constructor(url: string){
+
+		}
+	}
+	export class UrlStream implements Stream
+	{
+
+	}
+
 	var removeThese = ['watchseries',
 		'ch', 'x264', 'mp4', 'avi', 'flv',
 		'DVDRip', 'HDTV', 'hdtv', 'XviD',

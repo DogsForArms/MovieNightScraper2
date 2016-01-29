@@ -18,7 +18,7 @@ module MovieNightAPI
 			new Vodlocker_com(), new Allmyvideos_net(), 
 			new Gorillavid_in(), new Exashare_com(), 
 			new Vidlockers_ag(), new Bakavideo_tv(), 
-			new Powvideo_net(), new Bestreams_net()
+			new Powvideo_net(), //new Bestreams_net()
 		]
 		return resolvers
 	}

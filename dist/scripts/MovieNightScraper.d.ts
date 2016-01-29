@@ -285,3 +285,10 @@ declare var cli: Cli;
 declare var options: any;
 declare var hasNeededArgs: boolean;
 declare var usage: any;
+
+interface Function {
+    name(): string;
+}
+declare class something {
+    iAmAFunction(): void;
+}

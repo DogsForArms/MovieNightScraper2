@@ -33,17 +33,19 @@ module MovieNightAPI
 					return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1))
 				}
 				//set retry parameters
-				options.maxAttempts = 0
-				options.retryDelay = 300 + Math.random() * 1000
+				options.maxAttempts = 5
+				options.retryDelay = 800 + Math.random() * 1000
+
 
 				var makeRequest = function(options: any) {
+					// console.log("MAKING A REQUEST: " + JSON.stringify(options).bold)
 					Request(options, function(error: any, response: any, data: any) {
 						if (error) {
 							if (retryRequest(error, options)) {
 								//decrement & reset retry parameters
 								setTimeout(function() {
 									options.maxAttempts = options.maxAttempts - 1
-									console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim)
+									// console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim)
 									options.retryDelay = 300 + Math.random() * 1000
 
 									makeRequest(options)

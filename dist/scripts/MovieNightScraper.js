@@ -134,16 +134,17 @@ var MovieNightAPI;
                     return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1));
                 };
                 //set retry parameters
-                options.maxAttempts = 0;
-                options.retryDelay = 300 + Math.random() * 1000;
+                options.maxAttempts = 5;
+                options.retryDelay = 800 + Math.random() * 1000;
                 var makeRequest = function (options) {
+                    // console.log("MAKING A REQUEST: " + JSON.stringify(options).bold)
                     Request(options, function (error, response, data) {
                         if (error) {
                             if (retryRequest(error, options)) {
                                 //decrement & reset retry parameters
                                 setTimeout(function () {
                                     options.maxAttempts = options.maxAttempts - 1;
-                                    console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim);
+                                    // console.log(("RETRYING " + options.maxAttempts + ' - ' + options.url).inverse.dim)
                                     options.retryDelay = 300 + Math.random() * 1000;
                                     makeRequest(options);
                                 }, options.retryDelay);
@@ -538,7 +539,7 @@ var MovieNightAPI;
                 else {
                     MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
                         var postParams = MovieNightAPI.getHiddenPostParams(html);
-                        console.log(JSON.stringify(postParams, null, 4).italic);
+                        // console.log(JSON.stringify(postParams, null, 4).italic)
                         MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
                             // console.log(html.bgCyan)
                             var fn = RegExp.curryExecute(html);
@@ -654,7 +655,7 @@ var MovieNightAPI;
             var self = this;
             var url0 = ('http://vidlockers.ag/' + mediaIdentifier + '.html');
             MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
-                console.log(html0.blue.italic);
+                // console.log(html0.blue.italic)
                 var postParams = MovieNightAPI.getHiddenPostParams(html0);
                 MovieNightAPI.ResolverCommon.formPost(url0, postParams, self, process).then(function (html) {
                     var fn = RegExp.curryExecute(html);
@@ -665,7 +666,6 @@ var MovieNightAPI;
                     content.duration = durationStr ? +durationStr : null;
                     var urlComponents = content.streamUrl.split('/');
                     content.title = urlComponents[urlComponents.length - 1];
-                    console.log(content);
                     MovieNightAPI.finishedWithContent(content, self, process);
                 });
             });
@@ -845,7 +845,7 @@ var MovieNightAPI;
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
             new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(),
             new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv(),
-            new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net()
+            new MovieNightAPI.Powvideo_net(),
         ];
         return resolvers;
     }
@@ -947,10 +947,22 @@ if (options.help || !hasNeededArgs) {
 }
 else {
     if (options.scrape) {
+        // console.log(this.name())
+        var resultsCount = 0;
         var head = new MovieNightAPI.ProcessNode(function (results, process) {
-            console.log("scrape result: " + options.scrape);
-            console.log("results: " + JSON.stringify(results, null, 4).red);
-            console.log("finished: ".blue, process.finished);
+            // console.log("scrape result: " + options.scrape)
+            // console.log("results: " + JSON.stringify(results, null, 4).red)
+            // console.log("finished: ".blue, process.finished)
+            results.forEach(function (result) {
+                if (result.type == MovieNightAPI.ResultType.Content) {
+                    resultsCount++;
+                    console.log((resultsCount + ') ' + result.content.title).green.bold);
+                    console.log(JSON.stringify(result.content, null, 4).green);
+                }
+            });
+            if (process.finished) {
+                console.log("finished: with ".blue, resultsCount);
+            }
         });
         MovieNightAPI.scrape(options.scrape, head);
     }
@@ -959,3 +971,23 @@ else {
         console.warn("No command was run.  Use --help for usage.".red.bold);
     }
 }
+
+// function print(message?:any, ...optionalParams: any[]): void
+// {
+// 	console.log.apply(this, Array.prototype.slice.call(arguments))
+// }
+Function.prototype.name = function () {
+    var myName = arguments.callee.toString();
+    myName = myName.substr('function '.length);
+    myName = myName.substr(0, myName.indexOf('('));
+    return name;
+};
+var something = (function () {
+    function something() {
+    }
+    something.prototype.iAmAFunction = function () {
+        console.log(this.prototype);
+    };
+    return something;
+})();
+iAmAFunction();

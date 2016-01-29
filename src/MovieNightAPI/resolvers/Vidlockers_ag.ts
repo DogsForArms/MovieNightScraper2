@@ -23,7 +23,7 @@ module MovieNightAPI
 			var self = this
 			var url0 = ('http://vidlockers.ag/' + mediaIdentifier + '.html')
 			ResolverCommon.get(url0, self, process).then(function(html0){
-				console.log(html0.blue.italic)
+				// console.log(html0.blue.italic)
 				var postParams = getHiddenPostParams(html0)
 				
 				ResolverCommon.formPost(url0, postParams, self, process).then(function(html){
@@ -40,7 +40,6 @@ module MovieNightAPI
 					var urlComponents = content.streamUrl.split('/')
 					content.title = urlComponents[urlComponents.length-1]
 
-					console.log(content)
 					finishedWithContent(content, self, process)
 
 				})

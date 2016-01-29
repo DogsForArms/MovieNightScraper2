@@ -29,10 +29,11 @@ module MovieNightAPI
 					var fn = RegExp.curryExecute(html)
 
 					content.snapshotImageUrl = fn(/image:[^"]*"(.+)"/)
-					content.streamUrl = fn(/file:[^"]*"(.+)"/)
+
 					var durStr = fn(/duration:[^"]*"([0-9]+)"/) 
 					content.duration = durStr ? +durStr : null
-					content.mimeType = 'video/mp4'
+					content.streams = [new UrlStream(fn(/file:[^"]*"(.+)"/))]
+
 
 					var titleUrl = ('http://vodlocker.com/' + mediaIdentifier)
 					ResolverCommon.get(titleUrl, self, process)

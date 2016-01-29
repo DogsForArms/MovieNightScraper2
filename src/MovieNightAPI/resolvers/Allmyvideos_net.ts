@@ -56,12 +56,18 @@ module MovieNightAPI
 							{
 								srcs = JSON.parse(srcsStr)
 								var labeledStreams: LabeledStream[] = []
-								srcs.forEach(function(srcJson){
-									labeledStreams.push({'quality': srcJson.label, 'streamUrl': srcJson.file})
+
+								content.streams = srcs.map(function(srcJson){
+									var stream = new UrlStream(srcJson.file)
+									stream.name = srcJson.label
+									return stream
 								})
-								content.streamUrls = labeledStreams
+								// content.streamUrls =srcs.forEach(function(srcJson) {
+								// 	labeledStreams.push({'quality': srcJson.label, 'streamUrl': srcJson.file})
+								// })
+								// content.streamUrls = labeledStreams
 							}
-							catch (e){console.log(e)}
+							catch (e) { logError(e)}
 							
 							finishedWithContent(content, self, process)
 						})

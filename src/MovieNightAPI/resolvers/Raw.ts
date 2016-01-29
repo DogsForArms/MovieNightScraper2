@@ -25,8 +25,10 @@ module MovieNightAPI
 					if (mimeTypeIsValid(mType))
 					{
 						var content = new Content(tempMediaOwner, btoa2(url))
-						content.mimeType = mType
-						content.streamUrl = theUrl
+						var stream = new UrlStream(theUrl)
+						stream.mimeType = mType
+
+						content.streams = [stream]
 						MovieNightAPI.finishedWithContent(content, tempMediaOwner, mProcess)
 
 						return true

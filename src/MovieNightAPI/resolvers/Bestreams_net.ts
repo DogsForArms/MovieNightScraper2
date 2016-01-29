@@ -19,25 +19,49 @@ module MovieNightAPI
 		}
 
 		mediaIdExtractors = [
-			function(url: string) { return /bestreams\.net\/([a-zA-Z\d]+)/.execute(url)}
+			function(url: string) { 
+				var possibleMediaId = /bestreams\.net\/([a-zA-Z\d]+)/.execute(url)
+				return possibleMediaId == "embed" ? null : possibleMediaId
+			}
 		]
 
 		resolveId(mediaIdentifier: string, process: ProcessNode)
 		{
 			var self = this
 			var url = ('http://bestreams.net/' + mediaIdentifier)
+			var numRetries = 2
+			var doResolveId = function() {
+				ResolverCommon.get(url, self, process).then(function(html0) {
+					var postParams = getHiddenPostParams(html0)
 
-			console.log(url.bold)
-			ResolverCommon.get(url, self, process).then(function(html0){
-				// console.log(html0.red)
-				var postParams = getHiddenPostParams(html0)
-				console.log(postParams)
-				setTimeout(function() {
-					ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
-						console.log(html.blue.inverse)
-					})
-				}, 4000)
-			})
+					var content = new Content(self, mediaIdentifier)
+					content.title = postParams.fname
+					setTimeout(function() {
+						ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
+							var fn = RegExp.curryExecute(html)
+
+							content.snapshotImageUrl = fn(/image\s*:\s*["'](.+)["']/)
+
+							var durationStr = fn(/duration\s*:\s*["']([0-9]+?)["']/)
+							content.duration = durationStr ? +durationStr : null
+
+							var stream = new RtmpStream(fn(/streamer\s*:\s*["'](.+?)["']/),
+								fn(/file\s*:\s*["'](.+?)["']/))
+							content.streams = [stream]
+
+							if (!stream.server && numRetries > 0) {
+								self.resolveId(mediaIdentifier, process)
+							}
+							else
+							{
+								finishedWithContent(content, self, process)
+							}
+
+						})
+					}, 500)
+				})
+			}
+			doResolveId()
 		}
 
 		scrape(url: string, process: ProcessNode)

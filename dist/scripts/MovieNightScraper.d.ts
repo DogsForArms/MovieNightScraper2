@@ -119,10 +119,37 @@ declare module MovieNightAPI {
 }
 
 declare module MovieNightAPI {
+    enum StreamType {
+        Url = 0,
+        Rtmp = 1,
+    }
+    interface Stream {
+        name?: string;
+        type: StreamType;
+        mimeType: string;
+        isValid(): boolean;
+    }
+    class UrlStream implements Stream {
+        url: string;
+        type: StreamType;
+        mimeType: string;
+        name: string;
+        constructor(url: string);
+        isValid(): boolean;
+    }
+    class RtmpStream implements Stream {
+        server: string;
+        file: string;
+        type: StreamType;
+        mimeType: string;
+        name: string;
+        constructor(server: string, file: string);
+        isValid(): boolean;
+    }
     function niceFilter(rawTitle: string): string;
     interface LabeledStream {
         quality: string;
-        streamUrl: string;
+        stream: Stream;
     }
     class Content {
         mediaIdentifier: string;
@@ -130,9 +157,7 @@ declare module MovieNightAPI {
         snapshotImageUrl: string;
         posterImageUrl: string;
         duration: number;
-        streamUrl: string;
-        streamUrls: LabeledStream[];
-        mimeType: string;
+        streams: Stream[];
         uid: string;
         needsClientRefetch: boolean;
         domain: string;
@@ -286,9 +311,9 @@ declare var options: any;
 declare var hasNeededArgs: boolean;
 declare var usage: any;
 
-interface Function {
-    name(): string;
-}
-declare class something {
-    iAmAFunction(): void;
-}
+declare function logError(error: Error): void;
+declare var log: any;
+declare var a: {
+    b: number;
+};
+declare var d: string;

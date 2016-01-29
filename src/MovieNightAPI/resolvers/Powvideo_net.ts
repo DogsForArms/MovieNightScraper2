@@ -37,9 +37,8 @@ module MovieNightAPI {
 
 							var fn = RegExp.curryExecute(Unpack.unpack(evalStr))
 							content.snapshotImageUrl = fn(/image.*?=.*?["'](.+?)["']/)
-							content.streamUrl = fn(/sources.*?src.*?:.*['"](.+?\.mp4)['"]/)
-							console.log('content.streamUrl: ' + content.streamUrl)
-						} catch (e) { console.log(e) }
+							content.streams = [new UrlStream(fn(/sources.*?src.*?:.*['"](.+?\.mp4)['"]/))]
+						} catch (e) { logError(e) }
 						finishedWithContent(content, self, process)
 					})
 				}, 4000)

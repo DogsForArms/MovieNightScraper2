@@ -11,20 +11,34 @@ module MovieNightAPI
 	{
 		name?: string
 		type: StreamType
+		mimeType: string
 		isValid() : boolean
+	}
+	export class UrlStream implements Stream
+	{
+		type = StreamType.Url
+		mimeType: string
+		name: string
+
+		constructor(public url: string){}
+
+		isValid(): boolean
+		{
+			return (this.url != null)
+		}
 	}
 	export class RtmpStream implements Stream
 	{
 		type = StreamType.Rtmp
-		url: string
+		mimeType: string
+		name: string
+		
+		constructor(public server: string, public file: string){}
 
-		constructor(url: string){
-
+		isValid(): boolean
+		{
+			return (this.server != null && this.file != null)
 		}
-	}
-	export class UrlStream implements Stream
-	{
-
 	}
 
 	var removeThese = ['watchseries',
@@ -92,7 +106,7 @@ module MovieNightAPI
 	export interface LabeledStream 
 	{
 		quality: string
-		streamUrl: string
+		stream: Stream
 	}
 
 	export class Content {
@@ -100,10 +114,7 @@ module MovieNightAPI
 		snapshotImageUrl: string;
 		posterImageUrl: string;
 		duration: number;
-		streamUrl: string;
-		streamUrls: LabeledStream[]
-		// mediaIdentifier: string;
-		mimeType: string;
+		streams: Stream[]
 		uid: string;
 
 		needsClientRefetch: boolean;
@@ -139,22 +150,27 @@ module MovieNightAPI
 		}
 		else 
 		{
-			var reportInvalidMimeType = function()
+			var reportInvalidMimeType = function(mimeType: string)
 			{
-				var message = "Mime type " + content.mimeType + " is not supported."
+				var message = "Mime type " + mimeType + " is not supported."
 				var error = new ResolverError(ResolverErrorCode.InvalidMimeType, message, mediaOwnerInfo)
 				process.processOne({ type: ResultType.Error, error: error })
 			}
 
-			if (!content.mimeType) 
+			var stream = content.streams[0]
+			if (stream.type == StreamType.Url && !stream.mimeType) 
 			{
-				var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl
+				var urlStream: UrlStream = <UrlStream>stream
+
+				var videoUrl = urlStream.url
 				ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function(mimeType) 
 				{
-					content.mimeType = mimeType
+					content.streams.forEach(function(someStream) {
+						someStream.mimeType = mimeType
+					})
 					if (!mimeTypeIsValid(mimeType)) 
 					{
-						reportInvalidMimeType()
+						reportInvalidMimeType(mimeType)
 					}
 					else 
 					{
@@ -162,9 +178,9 @@ module MovieNightAPI
 					}
 				})
 			} else 
-			if (!mimeTypeIsValid(content.mimeType))
+			if (stream.type == StreamType.Url && !mimeTypeIsValid(content.streams[0].mimeType))
 			{
-				reportInvalidMimeType()
+				reportInvalidMimeType(content.streams[0].mimeType)
 			} 
 			else
 			{
@@ -173,15 +189,12 @@ module MovieNightAPI
 		}
 	}
 	function contentIsValid(content: Content): boolean {
-		var streamUrls: LabeledStream[] = content.streamUrls
-		var hasValidStreamUrls = (streamUrls && streamUrls.every(function(value) {
-			return (value.quality != null &&
-				value.quality != undefined &&
-				value.streamUrl != null &&
-				value.streamUrl != undefined)
-		})) && (streamUrls.length > 0)
-
-		return (content.streamUrl != null && content.streamUrl != undefined) || hasValidStreamUrls
+		// console.log("CONTENT: " + JSON.stringify(content, null, 4))
+		var streams: Stream[] = content.streams
+		content.streams = streams ? streams.filter(function(stream) {
+			return stream.isValid()
+		}) : []
+		return content.streams.length > 0
 	}
 	
 }

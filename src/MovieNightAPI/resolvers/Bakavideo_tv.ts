@@ -31,21 +31,19 @@ module MovieNightAPI
 
 			ResolverCommon.get(url, self, process).then(function(jsonStr){
 				
-				var streamUrls: LabeledStream[] = null
 				try {
 					var json = JSON.parse(jsonStr)
 					var html = Base64.decode(json.content)
 
 					var content = new Content(self, mediaIdentifier)
-					streamUrls = /<source(.*?)>/g.executeAll(html).map(function(component) {
-						var quality = /data-res="(.*?)"/.execute(component)
-						var url = /src="(.*?)"/.execute(component)
+					content.streams = /<source(.*?)>/g.executeAll(html)
+						.map(function(component) {
+							var stream = new UrlStream(/src="(.*?)"/.execute(component))
+							stream.name = /data-res="(.*?)"/.execute(component)
+							return stream
+						})
+				} catch (e) { logError(e) }
 
-						return { 'quality': quality, 'streamUrl': url }
-					})
-				} catch (e) {console.log(e)}
-
-				content.streamUrls = streamUrls
 				finishedWithContent(content, self, process)
 				
 			})

@@ -56,10 +56,9 @@ var MovieNightAPI;
                 var content = new MovieNightAPI.Content(self, mediaIdentifier);
                 var fn = RegExp.curryExecute(html);
                 content.snapshotImageUrl = fn(/image:[^"]*"(.+)"/);
-                content.streamUrl = fn(/file:[^"]*"(.+)"/);
                 var durStr = fn(/duration:[^"]*"([0-9]+)"/);
                 content.duration = durStr ? +durStr : null;
-                content.mimeType = 'video/mp4';
+                content.streams = [new MovieNightAPI.UrlStream(fn(/file:[^"]*"(.+)"/))];
                 var titleUrl = ('http://vodlocker.com/' + mediaIdentifier);
                 MovieNightAPI.ResolverCommon.get(titleUrl, self, process)
                     .then(function (titleHtml) {
@@ -274,7 +273,7 @@ var MovieNightAPI;
                 MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
                     var fn = RegExp.curryExecute(html);
                     var content = new MovieNightAPI.Content(self, mediaIdentifier);
-                    content.streamUrl = fn(/file\s*:\s*"(.*)"/);
+                    content.streams = [new MovieNightAPI.UrlStream(fn(/file\s*:\s*"(.*)"/))];
                     var durationStr = fn(/duration\s*:\s*"([0-9]+)"/);
                     content.duration = durationStr ? +durationStr : null;
                     content.snapshotImageUrl = fn(/image\s*:\s*"(.*)"/);
@@ -312,8 +311,9 @@ var MovieNightAPI;
                 var ifMimeTypeIsValidCreate = function (theUrl, mType, mProcess) {
                     if (MovieNightAPI.mimeTypeIsValid(mType)) {
                         var content = new MovieNightAPI.Content(tempMediaOwner, btoa2(url));
-                        content.mimeType = mType;
-                        content.streamUrl = theUrl;
+                        var stream = new MovieNightAPI.UrlStream(theUrl);
+                        stream.mimeType = mType;
+                        content.streams = [stream];
                         MovieNightAPI.finishedWithContent(content, tempMediaOwner, mProcess);
                         return true;
                     }
@@ -386,6 +386,35 @@ var MovieNightAPI;
 
 var MovieNightAPI;
 (function (MovieNightAPI) {
+    // Mark - Stream
+    (function (StreamType) {
+        StreamType[StreamType["Url"] = 0] = "Url";
+        StreamType[StreamType["Rtmp"] = 1] = "Rtmp";
+    })(MovieNightAPI.StreamType || (MovieNightAPI.StreamType = {}));
+    var StreamType = MovieNightAPI.StreamType;
+    var UrlStream = (function () {
+        function UrlStream(url) {
+            this.url = url;
+            this.type = StreamType.Url;
+        }
+        UrlStream.prototype.isValid = function () {
+            return (this.url != null);
+        };
+        return UrlStream;
+    })();
+    MovieNightAPI.UrlStream = UrlStream;
+    var RtmpStream = (function () {
+        function RtmpStream(server, file) {
+            this.server = server;
+            this.file = file;
+            this.type = StreamType.Rtmp;
+        }
+        RtmpStream.prototype.isValid = function () {
+            return (this.server != null && this.file != null);
+        };
+        return RtmpStream;
+    })();
+    MovieNightAPI.RtmpStream = RtmpStream;
     var removeThese = ['watchseries',
         'ch', 'x264', 'mp4', 'avi', 'flv',
         'DVDRip', 'HDTV', 'hdtv', 'XviD',
@@ -467,25 +496,29 @@ var MovieNightAPI;
             process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
         }
         else {
-            var reportInvalidMimeType = function () {
-                var message = "Mime type " + content.mimeType + " is not supported.";
+            var reportInvalidMimeType = function (mimeType) {
+                var message = "Mime type " + mimeType + " is not supported.";
                 var error = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.InvalidMimeType, message, mediaOwnerInfo);
                 process.processOne({ type: MovieNightAPI.ResultType.Error, error: error });
             };
-            if (!content.mimeType) {
-                var videoUrl = content.streamUrl || content.streamUrls[0].streamUrl;
+            var stream = content.streams[0];
+            if (stream.type == StreamType.Url && !stream.mimeType) {
+                var urlStream = stream;
+                var videoUrl = urlStream.url;
                 MovieNightAPI.ResolverCommon.getMimeType(videoUrl, mediaOwnerInfo, process).then(function (mimeType) {
-                    content.mimeType = mimeType;
+                    content.streams.forEach(function (someStream) {
+                        someStream.mimeType = mimeType;
+                    });
                     if (!mimeTypeIsValid(mimeType)) {
-                        reportInvalidMimeType();
+                        reportInvalidMimeType(mimeType);
                     }
                     else {
                         process.processOne({ type: MovieNightAPI.ResultType.Content, content: content });
                     }
                 });
             }
-            else if (!mimeTypeIsValid(content.mimeType)) {
-                reportInvalidMimeType();
+            else if (stream.type == StreamType.Url && !mimeTypeIsValid(content.streams[0].mimeType)) {
+                reportInvalidMimeType(content.streams[0].mimeType);
             }
             else {
                 process.processOne({ type: MovieNightAPI.ResultType.Content, content: content });
@@ -494,14 +527,12 @@ var MovieNightAPI;
     }
     MovieNightAPI.finishedWithContent = finishedWithContent;
     function contentIsValid(content) {
-        var streamUrls = content.streamUrls;
-        var hasValidStreamUrls = (streamUrls && streamUrls.every(function (value) {
-            return (value.quality != null &&
-                value.quality != undefined &&
-                value.streamUrl != null &&
-                value.streamUrl != undefined);
-        })) && (streamUrls.length > 0);
-        return (content.streamUrl != null && content.streamUrl != undefined) || hasValidStreamUrls;
+        // console.log("CONTENT: " + JSON.stringify(content, null, 4))
+        var streams = content.streams;
+        content.streams = streams ? streams.filter(function (stream) {
+            return stream.isValid();
+        }) : [];
+        return content.streams.length > 0;
     }
 })(MovieNightAPI || (MovieNightAPI = {}));
 
@@ -553,13 +584,14 @@ var MovieNightAPI;
                             try {
                                 srcs = JSON.parse(srcsStr);
                                 var labeledStreams = [];
-                                srcs.forEach(function (srcJson) {
-                                    labeledStreams.push({ 'quality': srcJson.label, 'streamUrl': srcJson.file });
+                                content.streams = srcs.map(function (srcJson) {
+                                    var stream = new MovieNightAPI.UrlStream(srcJson.file);
+                                    stream.name = srcJson.label;
+                                    return stream;
                                 });
-                                content.streamUrls = labeledStreams;
                             }
                             catch (e) {
-                                console.log(e);
+                                logError(e);
                             }
                             MovieNightAPI.finishedWithContent(content, self, process);
                         });
@@ -614,7 +646,7 @@ var MovieNightAPI;
                     MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
                         var fn = RegExp.curryExecute(html);
                         content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/);
-                        content.streamUrl = fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/);
+                        content.streams = [new MovieNightAPI.UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))];
                         var durationStr = fn(/duration:.*?["'](\d+)?["']/);
                         content.duration = durationStr ? +durationStr : null;
                         MovieNightAPI.finishedWithContent(content, self, process);
@@ -655,16 +687,16 @@ var MovieNightAPI;
             var self = this;
             var url0 = ('http://vidlockers.ag/' + mediaIdentifier + '.html');
             MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
-                // console.log(html0.blue.italic)
                 var postParams = MovieNightAPI.getHiddenPostParams(html0);
                 MovieNightAPI.ResolverCommon.formPost(url0, postParams, self, process).then(function (html) {
                     var fn = RegExp.curryExecute(html);
                     var content = new MovieNightAPI.Content(self, mediaIdentifier);
                     content.snapshotImageUrl = fn(/image:.*["'](.+?)["']/);
-                    content.streamUrl = fn(/file:.*["'](.*?)["']/);
+                    var stream = new MovieNightAPI.UrlStream(fn(/file:.*["'](.*?)["']/));
+                    content.streams = [stream];
                     var durationStr = fn(/duration:.*["']([0-9]+?)["']/);
                     content.duration = durationStr ? +durationStr : null;
-                    var urlComponents = content.streamUrl.split('/');
+                    var urlComponents = stream.url.split('/');
                     content.title = urlComponents[urlComponents.length - 1];
                     MovieNightAPI.finishedWithContent(content, self, process);
                 });
@@ -705,21 +737,20 @@ var MovieNightAPI;
             var self = this;
             var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier);
             MovieNightAPI.ResolverCommon.get(url, self, process).then(function (jsonStr) {
-                var streamUrls = null;
                 try {
                     var json = JSON.parse(jsonStr);
                     var html = Base64.decode(json.content);
                     var content = new MovieNightAPI.Content(self, mediaIdentifier);
-                    streamUrls = /<source(.*?)>/g.executeAll(html).map(function (component) {
-                        var quality = /data-res="(.*?)"/.execute(component);
-                        var url = /src="(.*?)"/.execute(component);
-                        return { 'quality': quality, 'streamUrl': url };
+                    content.streams = /<source(.*?)>/g.executeAll(html)
+                        .map(function (component) {
+                        var stream = new MovieNightAPI.UrlStream(/src="(.*?)"/.execute(component));
+                        stream.name = /data-res="(.*?)"/.execute(component);
+                        return stream;
                     });
                 }
                 catch (e) {
-                    console.log(e);
+                    logError(e);
                 }
-                content.streamUrls = streamUrls;
                 MovieNightAPI.finishedWithContent(content, self, process);
             });
         };
@@ -766,11 +797,10 @@ var MovieNightAPI;
                             var evalStr = /<script>[\s\S]+?(eval\([\s\S]+?)<\/script>/.execute(html);
                             var fn = RegExp.curryExecute(Unpack.unpack(evalStr));
                             content.snapshotImageUrl = fn(/image.*?=.*?["'](.+?)["']/);
-                            content.streamUrl = fn(/sources.*?src.*?:.*['"](.+?\.mp4)['"]/);
-                            console.log('content.streamUrl: ' + content.streamUrl);
+                            content.streams = [new MovieNightAPI.UrlStream(fn(/sources.*?src.*?:.*['"](.+?\.mp4)['"]/))];
                         }
                         catch (e) {
-                            console.log(e);
+                            logError(e);
                         }
                         MovieNightAPI.finishedWithContent(content, self, process);
                     });
@@ -800,7 +830,10 @@ var MovieNightAPI;
             this.name = "Bestreams";
             this.needsClientRefetch = true;
             this.mediaIdExtractors = [
-                function (url) { return /bestreams\.net\/([a-zA-Z\d]+)/.execute(url); }
+                function (url) {
+                    var possibleMediaId = /bestreams\.net\/([a-zA-Z\d]+)/.execute(url);
+                    return possibleMediaId == "embed" ? null : possibleMediaId;
+                }
             ];
         }
         Bestreams_net.prototype.recognizesUrlMayContainContent = function (url) {
@@ -809,17 +842,31 @@ var MovieNightAPI;
         Bestreams_net.prototype.resolveId = function (mediaIdentifier, process) {
             var self = this;
             var url = ('http://bestreams.net/' + mediaIdentifier);
-            console.log(url.bold);
-            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html0) {
-                // console.log(html0.red)
-                var postParams = MovieNightAPI.getHiddenPostParams(html0);
-                console.log(postParams);
-                setTimeout(function () {
-                    MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
-                        console.log(html.blue.inverse);
-                    });
-                }, 4000);
-            });
+            var numRetries = 2;
+            var doResolveId = function () {
+                MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html0) {
+                    var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                    var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                    content.title = postParams.fname;
+                    setTimeout(function () {
+                        MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
+                            var fn = RegExp.curryExecute(html);
+                            content.snapshotImageUrl = fn(/image\s*:\s*["'](.+)["']/);
+                            var durationStr = fn(/duration\s*:\s*["']([0-9]+?)["']/);
+                            content.duration = durationStr ? +durationStr : null;
+                            var stream = new MovieNightAPI.RtmpStream(fn(/streamer\s*:\s*["'](.+?)["']/), fn(/file\s*:\s*["'](.+?)["']/));
+                            content.streams = [stream];
+                            if (!stream.server && numRetries > 0) {
+                                self.resolveId(mediaIdentifier, process);
+                            }
+                            else {
+                                MovieNightAPI.finishedWithContent(content, self, process);
+                            }
+                        });
+                    }, 500);
+                });
+            };
+            doResolveId();
         };
         Bestreams_net.prototype.scrape = function (url, process) {
             MovieNightAPI.extractMediaId(this, url, process);
@@ -845,7 +892,7 @@ var MovieNightAPI;
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
             new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(),
             new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv(),
-            new MovieNightAPI.Powvideo_net(),
+            new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net()
         ];
         return resolvers;
     }
@@ -972,22 +1019,63 @@ else {
     }
 }
 
-// function print(message?:any, ...optionalParams: any[]): void
+// // function print(message?:any, ...optionalParams: any[]): void
+// // {
+// // 	console.log.apply(this, Array.prototype.slice.call(arguments))
+// // }
+// Function.prototype.name = function(): string
 // {
-// 	console.log.apply(this, Array.prototype.slice.call(arguments))
+// 	var myName = arguments.callee.toString()
+// 	myName = myName.substr('function '.length)
+// 	myName = myName.substr(0, myName.indexOf('('))
+// 	return name
 // }
-Function.prototype.name = function () {
-    var myName = arguments.callee.toString();
-    myName = myName.substr('function '.length);
-    myName = myName.substr(0, myName.indexOf('('));
-    return name;
-};
-var something = (function () {
-    function something() {
+// interface Function
+// {
+// 	name(): string
+// } 
+// class something
+// {
+// 	iAmAFunction()
+// 	{
+// 		console.log(this.prototype)
+// 	}
+// }
+// iAmAFunction()
+function logError(error) {
+    var func = console.log.bind(window.console);
+    console.log(error.message.bold.red, error.name.underline.bold.red);
+    func('hello');
+}
+var log;
+(function () {
+    var method;
+    var noop = function () { };
+    var methods = [
+        'assert', 'clear', 'count', 'debug', 'dir', 'dirxml', 'error',
+        'exception', 'group', 'groupCollapsed', 'groupEnd', 'info', 'log',
+        'markTimeline', 'profile', 'profileEnd', 'table', 'time', 'timeEnd',
+        'timeStamp', 'trace', 'warn'
+    ];
+    var length = methods.length;
+    var console = {};
+    while (length--) {
+        method = methods[length];
+        // Only stub undefined methods.
+        if (!console[method]) {
+            console[method] = noop;
+        }
     }
-    something.prototype.iAmAFunction = function () {
-        console.log(this.prototype);
-    };
-    return something;
+    if (Function.prototype.bind) {
+        log = Function.prototype.bind.call(console.log, console);
+    }
+    else {
+        log = function () {
+            Function.prototype.apply.call(console.log, console, arguments);
+        };
+    }
 })();
-iAmAFunction();
+var a = { b: 1 };
+var d = "test";
+log(a, d);
+log("hello world");

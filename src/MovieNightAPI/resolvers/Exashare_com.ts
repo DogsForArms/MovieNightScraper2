@@ -37,7 +37,7 @@ module MovieNightAPI
 							var fn = RegExp.curryExecute(html)
 
 							content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/)
-							content.streamUrl = fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/)
+							content.streams = [new UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))]
 							var durationStr = fn(/duration:.*?["'](\d+)?["']/)
 							content.duration = durationStr ? +durationStr : null
 

@@ -32,7 +32,7 @@ module MovieNightAPI
 				{
 					var fn = RegExp.curryExecute(html)
 					var content = new Content(self, mediaIdentifier)
-					content.streamUrl = fn(/file\s*:\s*"(.*)"/)
+					content.streams = [new UrlStream(fn(/file\s*:\s*"(.*)"/))]
 					var durationStr = fn(/duration\s*:\s*"([0-9]+)"/)
 
 					content.duration = durationStr ? +durationStr : null

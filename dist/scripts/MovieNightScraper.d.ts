@@ -25,10 +25,11 @@ declare module MovieNightAPI {
 declare module MovieNightAPI {
     enum ResolverErrorCode {
         InternetFailure = 0,
-        InsufficientData = 1,
-        UnexpectedLogic = 2,
-        InvalidMimeType = 3,
-        NoResponders = 4,
+        FileRemoved = 1,
+        InsufficientData = 2,
+        UnexpectedLogic = 3,
+        InvalidMimeType = 4,
+        NoResponders = 5,
     }
     class ResolverError {
         code: ResolverErrorCode;
@@ -73,6 +74,7 @@ declare module MovieNightAPI {
         function formPost(url: string, postParams: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
+        function raiseFileNotFoundError(res: Resolver<string>, url: string, process: ProcessNode): void;
     }
     function extractMediaId(res: Resolver<string>, url: string, process?: ProcessNode): string;
     function getHiddenPostParams(html: string): any;
@@ -282,6 +284,46 @@ declare module MovieNightAPI {
     }
 }
 
+declare module MovieNightAPI {
+    class Vidbull_lol implements Resolver<string> {
+        name: string;
+        domain: string;
+        needsClientRefetch: boolean;
+        recognizesUrlMayContainContent(url: string): boolean;
+        mediaIdExtractors: ((url: string) => string)[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+declare module MovieNightAPI {
+    class Vidbull_com implements Resolver<string> {
+        name: string;
+        domain: string;
+        needsClientRefetch: boolean;
+        static vidbullEmbededContentRegexMediaId: RegExp;
+        recognizesUrlMayContainContent(url: string): boolean;
+        mediaIdExtractors: ((url: string) => string)[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Thevideo_me implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        recognizesUrlMayContainContent(url: string): boolean;
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        mediaIdExtractors: ((url: string) => string)[];
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
@@ -291,6 +333,9 @@ declare module MovieNightAPI {
 /// <reference path="resolvers/Bakavideo_tv.d.ts" />
 /// <reference path="resolvers/Powvideo_net.d.ts" />
 /// <reference path="resolvers/Bestreams_net.d.ts" />
+/// <reference path="resolvers/Vidbull_lol.d.ts" />
+/// <reference path="resolvers/Vidbull_com.d.ts" />
+/// <reference path="resolvers/Thevideo_me.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;

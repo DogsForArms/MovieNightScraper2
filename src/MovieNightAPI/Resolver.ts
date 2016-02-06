@@ -3,6 +3,7 @@ module MovieNightAPI
 	export enum ResolverErrorCode 
 	{
 		InternetFailure,
+		FileRemoved,
 		InsufficientData,
 		UnexpectedLogic,
 		InvalidMimeType,

@@ -54,7 +54,7 @@ module MovieNightAPI
 		'MovieNight', 'HQ', 'HC', 'iFT', 'UNRATED', 'XViD', 'ETRG',
 		'alE13', 'WEBRip', 'MP3', 'mp3', 'DD5', 'MkvCage', 'MrSeeN',
 		'SiMPLE', 'TiTAN', 'aXXo', '480p', 'VDC', 'HDRiP', 'DAiLYHOMAGE',
-		'MiTED', 'xvid', 'webrip', 'XVID', '1080p', 'DD5',
+		'MiTED', 'xvid', 'webrip', 'XVID', '1080p', 'DD5', 'TSV',
 		'iNTERNAL', 'BDRip']
 	export function niceFilter(rawTitle: string) 
 	{

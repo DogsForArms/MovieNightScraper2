@@ -31,10 +31,7 @@
 
 function logError(error: Error)
 {
-	var func = console.log.bind(window.console)
-
 	console.log(error.message.bold.red, error.name.underline.bold.red)
-	func('hello')
 }
 
 var log: any

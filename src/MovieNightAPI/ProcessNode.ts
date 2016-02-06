@@ -1,3 +1,7 @@
+// var StackTrace = require('stacktrace-js')
+// console.log("STACKTRACE: " + StackTrace)
+
+
 module MovieNightAPI
 {
 	var count = 0;

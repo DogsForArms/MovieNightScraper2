@@ -41,7 +41,7 @@ module MovieNightAPI {
 						} catch (e) { logError(e) }
 						finishedWithContent(content, self, process)
 					})
-				}, 4000)
+				}, 6000)
 			})
 		}
 		mediaIdExtractors: ((url: string) => (string))[] = [function(url) {

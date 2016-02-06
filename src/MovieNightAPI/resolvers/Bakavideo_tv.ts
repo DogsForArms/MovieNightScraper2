@@ -26,9 +26,9 @@ module MovieNightAPI
 		]
 		resolveId(mediaIdentifier: string, process: ProcessNode) 
 		{
+			console.log("MEDIA ID: " + mediaIdentifier)
 			var self = this
 			var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier)
-
 			ResolverCommon.get(url, self, process).then(function(jsonStr){
 				
 				try {

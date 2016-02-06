@@ -8,6 +8,9 @@
 ///<reference path="./resolvers/Bakavideo_tv.ts" />
 ///<reference path="./resolvers/Powvideo_net.ts" />
 ///<reference path="./resolvers/Bestreams_net.ts" />
+///<reference path="./resolvers/Vidbull_lol.ts" />
+///<reference path="./resolvers/Vidbull_com.ts" />
+///<reference path="./resolvers/Thevideo_me.ts" />
 
 
 module MovieNightAPI
@@ -18,7 +21,9 @@ module MovieNightAPI
 			new Vodlocker_com(), new Allmyvideos_net(), 
 			new Gorillavid_in(), new Exashare_com(), 
 			new Vidlockers_ag(), new Bakavideo_tv(), 
-			new Powvideo_net(), new Bestreams_net()
+			new Powvideo_net(), new Bestreams_net(),	
+			new Thevideo_me()
+			//new Vidbull_lol(), new Vidbull_com()
 		]
 		return resolvers
 	}

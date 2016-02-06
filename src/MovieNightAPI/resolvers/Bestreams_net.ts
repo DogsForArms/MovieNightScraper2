@@ -46,11 +46,12 @@ module MovieNightAPI
 							content.duration = durationStr ? +durationStr : null
 
 							var stream = new RtmpStream(fn(/streamer\s*:\s*["'](.+?)["']/),
-								fn(/file\s*:\s*["'](.+?)["']/))
+												    	fn(/file\s*:\s*["'](.+?)["']/))
 							content.streams = [stream]
 
 							if (!stream.server && numRetries > 0) {
-								self.resolveId(mediaIdentifier, process)
+								numRetries--
+								doResolveId()
 							}
 							else
 							{

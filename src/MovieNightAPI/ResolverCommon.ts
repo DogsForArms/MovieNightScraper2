@@ -79,6 +79,18 @@ module MovieNightAPI
 			return q
 		}
 
+
+		export function raiseFileNotFoundError(res: Resolver<string>, url: string, process: ProcessNode)
+		{
+			var message = ("Sorry, the file no longer exists on " + res.domain + " at " + url)
+			process.processOne(
+				{
+					type: ResultType.Error, 
+					error: new ResolverError(ResolverErrorCode.FileRemoved, message, res)
+				})
+
+		}
+
 	}
 
 	export function extractMediaId(res: Resolver<string>, url: string, process?: ProcessNode) : string

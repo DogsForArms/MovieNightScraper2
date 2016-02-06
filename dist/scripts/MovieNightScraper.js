@@ -79,10 +79,11 @@ var MovieNightAPI;
 (function (MovieNightAPI) {
     (function (ResolverErrorCode) {
         ResolverErrorCode[ResolverErrorCode["InternetFailure"] = 0] = "InternetFailure";
-        ResolverErrorCode[ResolverErrorCode["InsufficientData"] = 1] = "InsufficientData";
-        ResolverErrorCode[ResolverErrorCode["UnexpectedLogic"] = 2] = "UnexpectedLogic";
-        ResolverErrorCode[ResolverErrorCode["InvalidMimeType"] = 3] = "InvalidMimeType";
-        ResolverErrorCode[ResolverErrorCode["NoResponders"] = 4] = "NoResponders";
+        ResolverErrorCode[ResolverErrorCode["FileRemoved"] = 1] = "FileRemoved";
+        ResolverErrorCode[ResolverErrorCode["InsufficientData"] = 2] = "InsufficientData";
+        ResolverErrorCode[ResolverErrorCode["UnexpectedLogic"] = 3] = "UnexpectedLogic";
+        ResolverErrorCode[ResolverErrorCode["InvalidMimeType"] = 4] = "InvalidMimeType";
+        ResolverErrorCode[ResolverErrorCode["NoResponders"] = 5] = "NoResponders";
     })(MovieNightAPI.ResolverErrorCode || (MovieNightAPI.ResolverErrorCode = {}));
     var ResolverErrorCode = MovieNightAPI.ResolverErrorCode;
     var ResolverError = (function () {
@@ -173,6 +174,14 @@ var MovieNightAPI;
             return q;
         }
         ResolverCommon.request = request;
+        function raiseFileNotFoundError(res, url, process) {
+            var message = ("Sorry, the file no longer exists on " + res.domain + " at " + url);
+            process.processOne({
+                type: MovieNightAPI.ResultType.Error,
+                error: new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.FileRemoved, message, res)
+            });
+        }
+        ResolverCommon.raiseFileNotFoundError = raiseFileNotFoundError;
     })(ResolverCommon = MovieNightAPI.ResolverCommon || (MovieNightAPI.ResolverCommon = {}));
     function extractMediaId(res, url, process) {
         var matches = res.mediaIdExtractors
@@ -204,6 +213,8 @@ var MovieNightAPI;
     MovieNightAPI.getHiddenPostParams = getHiddenPostParams;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+// var StackTrace = require('stacktrace-js')
+// console.log("STACKTRACE: " + StackTrace)
 var MovieNightAPI;
 (function (MovieNightAPI) {
     var count = 0;
@@ -278,6 +289,7 @@ var MovieNightAPI;
                     content.duration = durationStr ? +durationStr : null;
                     content.snapshotImageUrl = fn(/image\s*:\s*"(.*)"/);
                     content.title = title;
+                    console.log("call finished with content");
                     MovieNightAPI.finishedWithContent(content, self, process);
                 });
             });
@@ -428,7 +440,7 @@ var MovieNightAPI;
         'MovieNight', 'HQ', 'HC', 'iFT', 'UNRATED', 'XViD', 'ETRG',
         'alE13', 'WEBRip', 'MP3', 'mp3', 'DD5', 'MkvCage', 'MrSeeN',
         'SiMPLE', 'TiTAN', 'aXXo', '480p', 'VDC', 'HDRiP', 'DAiLYHOMAGE',
-        'MiTED', 'xvid', 'webrip', 'XVID', '1080p', 'DD5',
+        'MiTED', 'xvid', 'webrip', 'XVID', '1080p', 'DD5', 'TSV',
         'iNTERNAL', 'BDRip'];
     function niceFilter(rawTitle) {
         if (!rawTitle) {
@@ -689,15 +701,20 @@ var MovieNightAPI;
             MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
                 var postParams = MovieNightAPI.getHiddenPostParams(html0);
                 MovieNightAPI.ResolverCommon.formPost(url0, postParams, self, process).then(function (html) {
-                    var fn = RegExp.curryExecute(html);
                     var content = new MovieNightAPI.Content(self, mediaIdentifier);
-                    content.snapshotImageUrl = fn(/image:.*["'](.+?)["']/);
-                    var stream = new MovieNightAPI.UrlStream(fn(/file:.*["'](.*?)["']/));
-                    content.streams = [stream];
-                    var durationStr = fn(/duration:.*["']([0-9]+?)["']/);
-                    content.duration = durationStr ? +durationStr : null;
-                    var urlComponents = stream.url.split('/');
-                    content.title = urlComponents[urlComponents.length - 1];
+                    try {
+                        var fn = RegExp.curryExecute(html);
+                        content.snapshotImageUrl = fn(/image:.*["'](.+?)["']/);
+                        var stream = new MovieNightAPI.UrlStream(fn(/file:.*["'](.*?)["']/));
+                        content.streams = [stream];
+                        var durationStr = fn(/duration:.*["']([0-9]+?)["']/);
+                        content.duration = durationStr ? +durationStr : null;
+                        var urlComponents = stream.url.split('/');
+                        content.title = urlComponents[urlComponents.length - 1];
+                    }
+                    catch (e) {
+                        logError(e);
+                    }
                     MovieNightAPI.finishedWithContent(content, self, process);
                 });
             });
@@ -734,6 +751,7 @@ var MovieNightAPI;
             return MovieNightAPI.extractMediaId(this, url) != undefined;
         };
         Bakavideo_tv.prototype.resolveId = function (mediaIdentifier, process) {
+            console.log("MEDIA ID: " + mediaIdentifier);
             var self = this;
             var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier);
             MovieNightAPI.ResolverCommon.get(url, self, process).then(function (jsonStr) {
@@ -804,7 +822,7 @@ var MovieNightAPI;
                         }
                         MovieNightAPI.finishedWithContent(content, self, process);
                     });
-                }, 4000);
+                }, 6000);
             });
         };
         Powvideo_net.prototype.scrape = function (url, process) {
@@ -857,7 +875,8 @@ var MovieNightAPI;
                             var stream = new MovieNightAPI.RtmpStream(fn(/streamer\s*:\s*["'](.+?)["']/), fn(/file\s*:\s*["'](.+?)["']/));
                             content.streams = [stream];
                             if (!stream.server && numRetries > 0) {
-                                self.resolveId(mediaIdentifier, process);
+                                numRetries--;
+                                doResolveId();
                             }
                             else {
                                 MovieNightAPI.finishedWithContent(content, self, process);
@@ -876,6 +895,147 @@ var MovieNightAPI;
     MovieNightAPI.Bestreams_net = Bestreams_net;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Vidbull_lol = (function () {
+        function Vidbull_lol() {
+            this.name = "Vidbull";
+            this.domain = "vidbull.lol";
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /vidbull\.lol\/([a-zA-Z\d-]+?)(\/\?video|$)/.execute(url); }
+            ];
+        }
+        Vidbull_lol.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Vidbull_lol.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://vidbull.lol/' + mediaIdentifier + '/?video');
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                // console.log(html.yellow.inverse)
+                var vidbullMediaId = MovieNightAPI.Vidbull_com.vidbullEmbededContentRegexMediaId.execute(html);
+                if (vidbullMediaId) {
+                    console.log(vidbullMediaId.blue);
+                    new MovieNightAPI.Vidbull_com().resolveId(vidbullMediaId, process);
+                }
+                else {
+                    var content = new MovieNightAPI.Content(self, "nonsense");
+                    MovieNightAPI.finishedWithContent(content, self, process);
+                }
+            });
+        };
+        Vidbull_lol.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Vidbull_lol;
+    })();
+    MovieNightAPI.Vidbull_lol = Vidbull_lol;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Vidbull_com = (function () {
+        function Vidbull_com() {
+            this.name = "Vidbull";
+            this.domain = "vidbull.com";
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /vidbull\.com\/([a-zA-Z\d-]+?)$/.execute(url); },
+                function (url) { return Vidbull_com.vidbullEmbededContentRegexMediaId.execute(url); }
+            ];
+        }
+        Vidbull_com.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Vidbull_com.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://vidbull.com/embed-' + mediaIdentifier + '-720x405.html');
+            console.log(url);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                try {
+                    var evals = /<script.*?>(eval\([\s\S]*?)<\/script>/g.executeAll(html)[1];
+                    var unpacked = require('../../src/Tools/Unpacker/unpack.js').unpack(evals);
+                    // console.log(unpacked)
+                    var fn = RegExp.curryExecute(unpacked);
+                    var file = fn(/jwplayer.*file:['"]([a-zA-Z\d]*?)['"]/);
+                    var image = fn(/image:["'](.*?)["']/);
+                    console.log('file: ' + file);
+                }
+                catch (e) {
+                    console.log(e);
+                    logError(e);
+                }
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Vidbull_com.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        Vidbull_com.vidbullEmbededContentRegexMediaId = /vidbull\.com\/embed-([a-zA-Z\d]+?)-/;
+        return Vidbull_com;
+    })();
+    MovieNightAPI.Vidbull_com = Vidbull_com;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Thevideo_me = (function () {
+        function Thevideo_me() {
+            //Resolver properties
+            this.domain = 'thevideo.me';
+            this.name = 'TheVideo.me';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /thevideo\.me\/embed-(.*?)-/.execute(url); },
+                function (url) { return /thevideo\.me\/embed-(.+?)(\.html)?$/.execute(url); },
+                function (url) { return /thevideo\.me\/(.*?)(\.html)?$/.execute(url); }
+            ];
+        }
+        Thevideo_me.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != undefined;
+        };
+        Thevideo_me.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://thevideo.me/embed-' + mediaIdentifier + '.html');
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                try {
+                    var jwplayerconfig = /jwConfig_vars\s*=\s([\s\S]*?};)/.execute(html);
+                    jwplayerconfig = jwplayerconfig.replace(/'/g, '"');
+                    var fn = RegExp.curryExecute(jwplayerconfig);
+                    content.title = fn(/["']?title["']?\s*?:\s*?["'](.*?)["']/);
+                    content.snapshotImageUrl = fn(/["']?image["']?\s*?:\s*?["'](.*?)["']/);
+                    var durationStr = fn(/["']?duration["']?\s*?:\s*?["']([0-9]*?)["']/);
+                    content.duration = durationStr ? +durationStr : null;
+                    var sources = fn(/["']?sources["']?\s*?:\s*?(\[[\s\S]*?\])/);
+                    var sourceses = /\{(.*?)\}/g.executeAll(sources);
+                    content.streams = sourceses.map(function (s) {
+                        var label = /["']?label["']?\s*:\s*['"](.*?)['"]/.execute(s);
+                        var file = /["']?file["']?\s*:\s*['"](.*?)['"]/.execute(s);
+                        var urlStream = new MovieNightAPI.UrlStream(file);
+                        urlStream.name = label;
+                        return urlStream;
+                    });
+                }
+                catch (e) {
+                    logError(e);
+                }
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Thevideo_me.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Thevideo_me;
+    })();
+    MovieNightAPI.Thevideo_me = Thevideo_me;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -885,6 +1045,9 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Bakavideo_tv.ts" />
 ///<reference path="./resolvers/Powvideo_net.ts" />
 ///<reference path="./resolvers/Bestreams_net.ts" />
+///<reference path="./resolvers/Vidbull_lol.ts" />
+///<reference path="./resolvers/Vidbull_com.ts" />
+///<reference path="./resolvers/Thevideo_me.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -892,7 +1055,8 @@ var MovieNightAPI;
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
             new MovieNightAPI.Gorillavid_in(), new MovieNightAPI.Exashare_com(),
             new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv(),
-            new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net()
+            new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net(),
+            new MovieNightAPI.Thevideo_me()
         ];
         return resolvers;
     }
@@ -1003,8 +1167,10 @@ else {
             results.forEach(function (result) {
                 if (result.type == MovieNightAPI.ResultType.Content) {
                     resultsCount++;
-                    console.log((resultsCount + ') ' + result.content.title).green.bold);
-                    console.log(JSON.stringify(result.content, null, 4).green);
+                    console.log((resultsCount + ') ' + result.content.title + ' | ' + result.content.mediaOwnerName).green.bold);
+                    console.log(JSON.stringify(result.content, null, 4).blue.italic);
+                }
+                else {
                 }
             });
             if (process.finished) {
@@ -1043,9 +1209,7 @@ else {
 // }
 // iAmAFunction()
 function logError(error) {
-    var func = console.log.bind(window.console);
     console.log(error.message.bold.red, error.name.underline.bold.red);
-    func('hello');
 }
 var log;
 (function () {

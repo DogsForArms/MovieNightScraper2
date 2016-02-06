@@ -105,8 +105,12 @@ else
 				if (result.type == MovieNightAPI.ResultType.Content)
 				{
 					resultsCount++
-					console.log((resultsCount + ') ' + result.content.title).green.bold)
-					console.log(JSON.stringify(result.content,null,4).green)
+					console.log((resultsCount + ') ' + result.content.title + ' | ' + result.content.mediaOwnerName).green.bold)
+					console.log(JSON.stringify(result.content,null,4).blue.italic)
+				}
+				else
+				{
+
 				}
 			})
 

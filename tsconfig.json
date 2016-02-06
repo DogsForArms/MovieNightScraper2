@@ -11,6 +11,9 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Thevideo_me.ts",
+        "src/MovieNightAPI/resolvers/Vidbull_com.ts",
+        "src/MovieNightAPI/resolvers/Vidbull_lol.ts",
         "src/MovieNightAPI/resolvers/Exashare_com.ts",
         "src/MovieNightAPI/resolvers/Bestreams_net.ts",
         "src/MovieNightAPI/resolvers/Bakavideo_tv.ts",

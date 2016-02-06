@@ -39,6 +39,7 @@ module MovieNightAPI
 					content.snapshotImageUrl = fn(/image\s*:\s*"(.*)"/)
 					content.title = title
 
+					console.log("call finished with content")
 					finishedWithContent(content, self, process)
 				})
 

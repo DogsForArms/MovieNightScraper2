@@ -422,7 +422,6 @@ declare module MovieNightAPI {
     function scrape(url: string, process: ProcessNode): void;
 }
 
-/// <reference path="../vendor/phantomjs.d.ts" />
 /// <reference path="../vendor/colors.d.ts" />
 /// <reference path="../vendor/command-line-args.d.ts" />
 /// <reference path="MovieNightAPI/resolvers/Vodlocker_com.d.ts" />

@@ -1282,18 +1282,23 @@ var MovieNightAPI;
             var url = ('http://openload.co/f/' + mediaIdentifier);
             MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
                 var content = new MovieNightAPI.Content(self, mediaIdentifier);
-                content.title = /<title>(.+)?<\/title>/.execute(html);
-                content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
-                    .filter(function (s) { return s.length > 0; })
-                    .map(MovieNightAPI.ResolverCommon.beautify)
-                    .reduce(function (l, c) {
-                    var stream = new MovieNightAPI.UrlStream(/window\.vr\s*=\s*["'](.+?)["']/.execute(c));
-                    stream.mimeType = /window\.vt\s*=\s*["'](.*?)["']/.execute(c);
-                    if (stream.isValid()) {
-                        l.push(stream);
-                    }
-                    return l;
-                }, []);
+                try {
+                    content.title = /<title>(.+)?<\/title>/.execute(html);
+                    content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
+                        .filter(function (s) { return s.length > 0; })
+                        .map(MovieNightAPI.ResolverCommon.beautify)
+                        .reduce(function (l, c) {
+                        var stream = new MovieNightAPI.UrlStream(/window\.vr\s*=\s*["'](.+?)["']/.execute(c));
+                        stream.mimeType = /window\.vt\s*=\s*["'](.*?)["']/.execute(c);
+                        if (stream.isValid()) {
+                            l.push(stream);
+                        }
+                        return l;
+                    }, []);
+                }
+                catch (e) {
+                    logError(e);
+                }
                 MovieNightAPI.finishedWithContent(content, self, process);
             });
         };

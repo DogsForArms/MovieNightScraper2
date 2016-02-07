@@ -136,7 +136,8 @@ else
 	} else
 	if (options.phantomjs)
 	{
-		
+		var webPage: WebPage = require('phantomjs')
+		console.log(webpage)
 
 	} else
 	{

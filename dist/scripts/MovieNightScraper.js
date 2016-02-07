@@ -116,7 +116,6 @@ var MovieNightAPI;
     (function (ResolverCommon) {
         function beautify(ugly) {
             var Unpack = require('../../src/Tools/Unpacker/unpack.js');
-            console.log(Unpack);
             return Unpack.unpack(ugly);
         }
         ResolverCommon.beautify = beautify;
@@ -1264,6 +1263,51 @@ var MovieNightAPI;
     MovieNightAPI.Allvid_ch = Allvid_ch;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Openload_co = (function () {
+        function Openload_co() {
+            this.domain = 'openload.co';
+            this.name = 'Openload.co';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /openload\.co\/f\/([\da-zA-Z]+?)(\/)?(\.html)?$/.execute(url); }
+            ];
+        }
+        Openload_co.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://openload.co/f/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = /<title>(.+)?<\/title>/.execute(html);
+                content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
+                    .filter(function (s) { return s.length > 0; })
+                    .map(MovieNightAPI.ResolverCommon.beautify)
+                    .reduce(function (l, c) {
+                    var stream = new MovieNightAPI.UrlStream(/window\.vr\s*=\s*["'](.+?)["']/.execute(c));
+                    stream.mimeType = /window\.vt\s*=\s*["'](.*?)["']/.execute(c);
+                    if (stream.isValid()) {
+                        l.push(stream);
+                    }
+                    return l;
+                }, []);
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Openload_co.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Openload_co.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Openload_co;
+    })();
+    MovieNightAPI.Openload_co = Openload_co;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -1280,6 +1324,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Lolzor_com.ts" />
 ///<reference path="./resolvers/Filehoot_com.ts" />
 ///<reference path="./resolvers/Allvid_ch.ts" />
+///<reference path="./resolvers/Openload_co.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1289,7 +1334,8 @@ var MovieNightAPI;
             new MovieNightAPI.Vidlockers_ag(), new MovieNightAPI.Bakavideo_tv(),
             new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net(),
             new MovieNightAPI.Thevideo_me(), new MovieNightAPI.Mycollection_net(),
-            new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch()
+            new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch(),
+            new MovieNightAPI.Openload_co()
         ];
         return resolvers;
     }
@@ -1312,6 +1358,7 @@ var MovieNightAPI;
     MovieNightAPI.scrape = scrape;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../vendor/phantomjs.d.ts" />
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
@@ -1419,6 +1466,10 @@ else {
             }
         });
         MovieNightAPI.scrape(options.scrape, head);
+    }
+    else if (options.phantom) {
+        console.log('what is this: ');
+        console.log(require('phantomjs'));
     }
     else {
         console.log(JSON.stringify(options, null, 4).white);

@@ -15,6 +15,7 @@
 ///<reference path="./resolvers/Lolzor_com.ts" />
 ///<reference path="./resolvers/Filehoot_com.ts" />
 ///<reference path="./resolvers/Allvid_ch.ts" />
+///<reference path="./resolvers/Openload_co.ts" />
 
 
 module MovieNightAPI
@@ -27,7 +28,8 @@ module MovieNightAPI
 			new Vidlockers_ag(), new Bakavideo_tv(), 
 			new Powvideo_net(), new Bestreams_net(),	
 			new Thevideo_me(), new Mycollection_net(),
-			new Filehoot_com(), new Allvid_ch()
+			new Filehoot_com(), new Allvid_ch(),
+			new Openload_co()
 			//new Lolzor_com()
 			//new Vidbull_lol(), new Vidbull_com()
 		]

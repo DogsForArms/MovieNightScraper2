@@ -385,6 +385,21 @@ declare module MovieNightAPI {
     }
 }
 
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Openload_co implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
@@ -401,11 +416,13 @@ declare module MovieNightAPI {
 /// <reference path="resolvers/Lolzor_com.d.ts" />
 /// <reference path="resolvers/Filehoot_com.d.ts" />
 /// <reference path="resolvers/Allvid_ch.d.ts" />
+/// <reference path="resolvers/Openload_co.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;
 }
 
+/// <reference path="../vendor/phantomjs.d.ts" />
 /// <reference path="../vendor/colors.d.ts" />
 /// <reference path="../vendor/command-line-args.d.ts" />
 /// <reference path="MovieNightAPI/resolvers/Vodlocker_com.d.ts" />

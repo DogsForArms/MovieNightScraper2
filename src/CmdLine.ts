@@ -134,10 +134,15 @@ else
 		MovieNightAPI.scrape(options.scrape, head)
 
 	} else
-	if (options.phantomjs)
+	if (options.phantom)
 	{
-		var webPage: WebPage = require('phantomjs')
-		console.log(webpage)
+		console.log('what is this: ')
+		console.log(require('phantomjs'))
+		// var webPage = <WebPage>(require('phantomjs').create())
+		// console.log('webPage: ' + webPage)
+		// webPage.open('http://www.google.com', function(status: string){
+		// 	console.log('status: ' + status)
+		// })
 
 	} else
 	{

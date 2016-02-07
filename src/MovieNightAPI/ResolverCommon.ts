@@ -14,7 +14,6 @@ module MovieNightAPI
 		export function beautify(ugly: string)
 		{
 			var Unpack = require('../../src/Tools/Unpacker/unpack.js')
-			console.log(Unpack)
 			return Unpack.unpack(ugly)
 		}
 

@@ -1,5 +1,6 @@
 
 // var JavascriptObfuscator = require('./javascriptobfuscator_unpacker.js')
+var AADecoder = require('./AADecoder')
 var MyObfuscate = require('./myobfuscate_unpacker.js')
 var P_A_C_K_E_R = require('./p_a_c_k_e_r_unpacker.js')
 var Urlencoded = require('./urlencode_unpacker.js')
@@ -28,7 +29,7 @@ var unpack = function(){
             }
         } while (found);
 
-        var unpackers = [P_A_C_K_E_R, Urlencoded, /*JavascriptObfuscator,*/ MyObfuscate];
+        var unpackers = [AADecoder, P_A_C_K_E_R, Urlencoded, /*JavascriptObfuscator,*/ MyObfuscate];
         for (var i = 0; i < unpackers.length; i++) {
             if (unpackers[i].detect(source)) {
                 unpacked = unpackers[i].unpack(source);

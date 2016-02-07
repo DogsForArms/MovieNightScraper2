@@ -11,6 +11,7 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Openload_co.ts",
         "src/MovieNightAPI/resolvers/Filehoot_com.ts",
         "src/MovieNightAPI/resolvers/Lolzor_com.ts",
         "src/MovieNightAPI/resolvers/Mycollection_net.ts",

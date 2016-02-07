@@ -1,3 +1,4 @@
+///<reference path="../vendor/phantomjs.d.ts" />
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
@@ -23,7 +24,7 @@ var optionalCommandLineConfigs: CommandLineConfig[] = [
 		name: "help",
 		type: Boolean,
 		description: "Print usage instructions"
-	},
+	}
 
 ];
 var requiredCommandLineConfigs: CommandLineConfig[] = [
@@ -51,6 +52,13 @@ var requiredCommandLineConfigs: CommandLineConfig[] = [
 	// 	alias: "t", 
 	// 	description: "Paginate test" 
 	// }
+	
+	{
+		name: 'phantom',
+		type: Boolean,
+		alias: "p",
+		description: "test phantom js"
+	},
 	{
 		name: "scrape",
 		type: String,
@@ -97,13 +105,16 @@ else
 		// console.log(this.name())
 
 		var resultsCount = 0
+		var usedUids: any = []
+
 		var head = new MovieNightAPI.ProcessNode(function(results: MovieNightAPI.Result[], process: MovieNightAPI.ProcessNode) {
 			// console.log("scrape result: " + options.scrape)
 			// console.log("results: " + JSON.stringify(results, null, 4).red)
 			// console.log("finished: ".blue, process.finished)
 			results.forEach(function(result){
-				if (result.type == MovieNightAPI.ResultType.Content)
+				if (result.type == MovieNightAPI.ResultType.Content && usedUids[result.content.uid] == undefined)
 				{
+					usedUids[result.content.uid] = true
 					resultsCount++
 					console.log((resultsCount + ') ' + result.content.title + ' | ' + result.content.mediaOwnerName).green.bold)
 					console.log(JSON.stringify(result.content,null,4).blue.italic)
@@ -121,6 +132,11 @@ else
 		})
 
 		MovieNightAPI.scrape(options.scrape, head)
+
+	} else
+	if (options.phantomjs)
+	{
+		
 
 	} else
 	{

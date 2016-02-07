@@ -70,6 +70,7 @@ declare module MovieNightAPI {
 declare var Request: any;
 declare module MovieNightAPI {
     module ResolverCommon {
+        function beautify(ugly: string): any;
         function get(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function formPost(url: string, postParams: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
         function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string>;
@@ -252,7 +253,6 @@ declare module MovieNightAPI {
 /// <reference path="../ResolverCommon.d.ts" />
 /// <reference path="../ProcessNode.d.ts" />
 /// <reference path="../Content.d.ts" />
-declare var Unpack: any;
 declare module MovieNightAPI {
     class Powvideo_net implements Resolver<string> {
         domain: string;
@@ -324,6 +324,67 @@ declare module MovieNightAPI {
     }
 }
 
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Mycollection_net implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Lolzor_com implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Filehoot_com implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Allvid_ch implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        private vrot(s);
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
@@ -336,6 +397,10 @@ declare module MovieNightAPI {
 /// <reference path="resolvers/Vidbull_lol.d.ts" />
 /// <reference path="resolvers/Vidbull_com.d.ts" />
 /// <reference path="resolvers/Thevideo_me.d.ts" />
+/// <reference path="resolvers/Mycollection_net.d.ts" />
+/// <reference path="resolvers/Lolzor_com.d.ts" />
+/// <reference path="resolvers/Filehoot_com.d.ts" />
+/// <reference path="resolvers/Allvid_ch.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;

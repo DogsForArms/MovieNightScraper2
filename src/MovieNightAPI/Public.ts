@@ -11,6 +11,10 @@
 ///<reference path="./resolvers/Vidbull_lol.ts" />
 ///<reference path="./resolvers/Vidbull_com.ts" />
 ///<reference path="./resolvers/Thevideo_me.ts" />
+///<reference path="./resolvers/Mycollection_net.ts" />
+///<reference path="./resolvers/Lolzor_com.ts" />
+///<reference path="./resolvers/Filehoot_com.ts" />
+///<reference path="./resolvers/Allvid_ch.ts" />
 
 
 module MovieNightAPI
@@ -22,7 +26,9 @@ module MovieNightAPI
 			new Gorillavid_in(), new Exashare_com(), 
 			new Vidlockers_ag(), new Bakavideo_tv(), 
 			new Powvideo_net(), new Bestreams_net(),	
-			new Thevideo_me()
+			new Thevideo_me(), new Mycollection_net(),
+			new Filehoot_com(), new Allvid_ch()
+			//new Lolzor_com()
 			//new Vidbull_lol(), new Vidbull_com()
 		]
 		return resolvers

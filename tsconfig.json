@@ -11,6 +11,9 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Filehoot_com.ts",
+        "src/MovieNightAPI/resolvers/Lolzor_com.ts",
+        "src/MovieNightAPI/resolvers/Mycollection_net.ts",
         "src/MovieNightAPI/resolvers/Thevideo_me.ts",
         "src/MovieNightAPI/resolvers/Vidbull_com.ts",
         "src/MovieNightAPI/resolvers/Vidbull_lol.ts",

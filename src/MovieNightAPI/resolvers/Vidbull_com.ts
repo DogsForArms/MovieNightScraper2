@@ -26,11 +26,9 @@ module MovieNightAPI
 				try
 				{
 					var evals = /<script.*?>(eval\([\s\S]*?)<\/script>/g.executeAll(html)[1]
-
-					var unpacked = require('../../src/Tools/Unpacker/unpack.js').unpack(evals)
+					var unpacked = ResolverCommon.beautify(evals)
 					// console.log(unpacked)
 					var fn = RegExp.curryExecute(unpacked)
-
 					var file = fn(/jwplayer.*file:['"]([a-zA-Z\d]*?)['"]/)
 					var image = fn(/image:["'](.*?)["']/)
 					console.log('file: ' +file)

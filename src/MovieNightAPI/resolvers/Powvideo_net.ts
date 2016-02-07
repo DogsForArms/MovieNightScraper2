@@ -6,9 +6,6 @@
 ///<reference path="../ProcessNode.ts" />
 ///<reference path="../Content.ts" />
 
-
-var Unpack = require('../../src/Tools/Unpacker/unpack.js')
-
 module MovieNightAPI {
 	export class Powvideo_net implements Resolver<string>
 	{
@@ -35,7 +32,7 @@ module MovieNightAPI {
 						{
 							var evalStr = /<script>[\s\S]+?(eval\([\s\S]+?)<\/script>/.execute(html)
 
-							var fn = RegExp.curryExecute(Unpack.unpack(evalStr))
+							var fn = RegExp.curryExecute(ResolverCommon.beautify(evalStr))
 							content.snapshotImageUrl = fn(/image.*?=.*?["'](.+?)["']/)
 							content.streams = [new UrlStream(fn(/sources.*?src.*?:.*['"](.+?\.mp4)['"]/))]
 						} catch (e) { logError(e) }

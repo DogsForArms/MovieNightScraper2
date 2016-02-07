@@ -56,9 +56,9 @@ module MovieNightAPI {
 
 
 		mediaIdExtractors = [
-			function(url: string) { return /thevideo\.me\/embed-(.*?)-/.execute(url) },
-			function(url: string) { return /thevideo\.me\/embed-(.+?)(\.html)?$/.execute(url) },
-			function(url: string) { return /thevideo\.me\/(.*?)(\.html)?$/.execute(url) }
+			function(url: string) { return /thevideo\.me\/embed-([0-9a-zA-Z]+?)-/.execute(url) },
+			function(url: string) { return /thevideo\.me\/embed-([0-9a-zA-Z]+?)(\.html)?$/.execute(url) },
+			function(url: string) { return /thevideo\.me\/([0-9a-zA-Z]+?)(\.html)?$/.execute(url) }
 		]
 
 		scrape(url: string, process: ProcessNode) {

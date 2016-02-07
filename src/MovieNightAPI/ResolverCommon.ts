@@ -10,6 +10,14 @@ module MovieNightAPI
 	//network stuff
 	export module ResolverCommon 
 	{
+
+		export function beautify(ugly: string)
+		{
+			var Unpack = require('../../src/Tools/Unpacker/unpack.js')
+			console.log(Unpack)
+			return Unpack.unpack(ugly)
+		}
+
 		export function get(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise < string > 
 		{
 			return request({ 'method': 'GET', 'url': url }, mediaOwnerInfo, process)

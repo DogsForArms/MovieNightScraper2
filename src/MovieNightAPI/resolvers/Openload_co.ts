@@ -21,21 +21,23 @@ module MovieNightAPI
 			var url = ('http://openload.co/f/' + mediaIdentifier)
 			ResolverCommon.get(url, self, process).then(function(html){
 				var content = new Content(self, mediaIdentifier)
-				content.title = /<title>(.+)?<\/title>/.execute(html)
-			
-				content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
-				.filter(function(s){ return s.length > 0})
-				.map( ResolverCommon.beautify )
-				.reduce(function(l, c) {
-					var stream = new UrlStream(/window\.vr\s*=\s*["'](.+?)["']/.execute(c))
-					stream.mimeType = /window\.vt\s*=\s*["'](.*?)["']/.execute(c)
-					if (stream.isValid())
-					{
-						l.push(stream)
-					}
-					return l
-				}, [])
-
+				try
+				{
+					content.title = /<title>(.+)?<\/title>/.execute(html)
+				
+					content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
+					.filter(function(s){ return s.length > 0})
+					.map( ResolverCommon.beautify )
+					.reduce(function(l, c) {
+						var stream = new UrlStream(/window\.vr\s*=\s*["'](.+?)["']/.execute(c))
+						stream.mimeType = /window\.vt\s*=\s*["'](.*?)["']/.execute(c)
+						if (stream.isValid())
+						{
+							l.push(stream)
+						}
+						return l
+					}, [])
+				} catch (e) { logError(e) }
 				finishedWithContent(content, self, process)
 
 			})

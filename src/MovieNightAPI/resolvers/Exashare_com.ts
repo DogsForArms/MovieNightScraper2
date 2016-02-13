@@ -30,20 +30,29 @@ module MovieNightAPI
 				var title = postParams.fname
 				var content = new Content(self, mediaIdentifier)
 				content.title = title
+				// console.log(html0)
+				// setTimeout(function(){
+					var url = /player_wrap[\s\S]*?src\s*?=["']([\s\S]*?)["']/.execute(html0) //("http://exashare.com/embed-" + mediaIdentifier + "-960x540.html")
+					url = url.replace('\n', '')
+					
+					// console.log(postParams)
+					// console.log(html0.yellow)
+					ResolverCommon.get(url, self, process).then(function(html) {
+						console.log(html.blue)
 
-				setTimeout(function(){
-					var url = ("http://exashare.com/embed-" + mediaIdentifier + "-960x540.html")
-					ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
-							var fn = RegExp.curryExecute(html)
+						var fn = RegExp.curryExecute(html)
 
-							content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/)
-							content.streams = [new UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))]
-							var durationStr = fn(/duration:.*?["'](\d+)?["']/)
-							content.duration = durationStr ? +durationStr : null
+						content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/)
+						content.streams = [new UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))]
+						var durationStr = fn(/duration:.*?["'](\d+)?["']/)
+						content.duration = durationStr ? +durationStr : null
 
-							finishedWithContent(content, self, process)
-						})
-					}, 10 * 1000);
+						console.log(url)
+						// console.log(html.yellow)
+						console.log(JSON.stringify(content, null, 4).magenta)
+						finishedWithContent(content, self, process)
+					})
+				// }, 10 * 1000);
 
 			})
 		}

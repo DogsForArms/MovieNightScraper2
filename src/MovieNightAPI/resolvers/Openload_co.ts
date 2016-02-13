@@ -24,7 +24,7 @@ module MovieNightAPI
 				try
 				{
 					content.title = /<title>(.+)?<\/title>/.execute(html)
-				
+					content.snapshotImageUrl = /poster\s*?=\s*?["'](.*?)["']/.execute(html)
 					content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
 					.filter(function(s){ return s.length > 0})
 					.map( ResolverCommon.beautify )

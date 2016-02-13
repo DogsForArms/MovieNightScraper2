@@ -42,11 +42,11 @@ var MovieNightAPI;
             this.needsClientRefetch = true;
             this.mediaIdExtractors = [
                 function (url) { return /vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/.execute(url); },
-                function (url) { return /vodlocker\.com\/([^\/]+)$/.execute(url); }
+                function (url) { return /vodlocker\.com\/([^\/]+)(\/)?$/.execute(url); }
             ];
         }
         Vodlocker_com.prototype.recognizesUrlMayContainContent = function (url) {
-            return MovieNightAPI.extractMediaId(this, url) != undefined;
+            return (MovieNightAPI.extractMediaId(this, url) || /(vodlocker\.lol\/)/.execute(url)) != undefined;
         };
         Vodlocker_com.prototype.resolveId = function (mediaIdentifier, process) {
             var self = this;
@@ -68,7 +68,22 @@ var MovieNightAPI;
             });
         };
         Vodlocker_com.prototype.scrape = function (url, process) {
-            MovieNightAPI.extractMediaId(this, url, process);
+            var self = this;
+            if (/vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url)) {
+                self.scrapeVodlockerLol((url + '/?video'), process);
+            }
+            else {
+                MovieNightAPI.extractMediaId(this, url, process);
+            }
+        };
+        Vodlocker_com.prototype.scrapeVodlockerLol = function (url, process) {
+            var self = this;
+            console.log(url.red);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var realUrl = /<iframe src=["'](.*)["']/i.execute(html);
+                console.log(realUrl.green);
+                MovieNightAPI.extractMediaId(self, realUrl, process);
+            });
         };
         return Vodlocker_com;
     })();
@@ -657,17 +672,25 @@ var MovieNightAPI;
                 var title = postParams.fname;
                 var content = new MovieNightAPI.Content(self, mediaIdentifier);
                 content.title = title;
-                setTimeout(function () {
-                    var url = ("http://exashare.com/embed-" + mediaIdentifier + "-960x540.html");
-                    MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
-                        var fn = RegExp.curryExecute(html);
-                        content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/);
-                        content.streams = [new MovieNightAPI.UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))];
-                        var durationStr = fn(/duration:.*?["'](\d+)?["']/);
-                        content.duration = durationStr ? +durationStr : null;
-                        MovieNightAPI.finishedWithContent(content, self, process);
-                    });
-                }, 10 * 1000);
+                // console.log(html0)
+                // setTimeout(function(){
+                var url = /player_wrap[\s\S]*?src\s*?=["']([\s\S]*?)["']/.execute(html0); //("http://exashare.com/embed-" + mediaIdentifier + "-960x540.html")
+                url = url.replace('\n', '');
+                // console.log(postParams)
+                // console.log(html0.yellow)
+                MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                    console.log(html.blue);
+                    var fn = RegExp.curryExecute(html);
+                    content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/);
+                    content.streams = [new MovieNightAPI.UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))];
+                    var durationStr = fn(/duration:.*?["'](\d+)?["']/);
+                    content.duration = durationStr ? +durationStr : null;
+                    console.log(url);
+                    // console.log(html.yellow)
+                    console.log(JSON.stringify(content, null, 4).magenta);
+                    MovieNightAPI.finishedWithContent(content, self, process);
+                });
+                // }, 10 * 1000);
             });
         };
         Exashare_com.prototype.scrape = function (url, process) {
@@ -1284,6 +1307,7 @@ var MovieNightAPI;
                 var content = new MovieNightAPI.Content(self, mediaIdentifier);
                 try {
                     content.title = /<title>(.+)?<\/title>/.execute(html);
+                    content.snapshotImageUrl = /poster\s*?=\s*?["'](.*?)["']/.execute(html);
                     content.streams = /<script.*?>([\s\S]*?)<\/script>/g.executeAll(html)
                         .filter(function (s) { return s.length > 0; })
                         .map(MovieNightAPI.ResolverCommon.beautify)
@@ -1313,6 +1337,67 @@ var MovieNightAPI;
     MovieNightAPI.Openload_co = Openload_co;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Ishared_eu = (function () {
+        function Ishared_eu() {
+            this.domain = 'ishared.eu';
+            this.name = 'IShared.eu';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /ishared\.eu\/video\/(.+?)(\/)?(\.html)?$/.execute(url); }
+            ];
+        }
+        Ishared_eu.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://ishared.eu/video/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                // console.log(html.blue)
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                // console.log(html.yellow)
+                try {
+                    content.title = /titlebar[\s\S]*?<h1>(.*?)<\/h1>/.execute(html);
+                    var uglyStr = /<script[\s\S]+?(eval[\s\S]*?)<\/script/.execute(html);
+                    // console.log(uglyStr)
+                    var prettyString = MovieNightAPI.ResolverCommon.beautify(uglyStr);
+                    // console.log(prettyString.magenta)
+                    var p;
+                    var jwplayer = function (str) {
+                        return {
+                            setup: function (params) {
+                                p = params;
+                            }
+                        };
+                    };
+                    eval(prettyString);
+                    content.streams = p.playlist[0].sources.map(function (source) {
+                        var stream = new MovieNightAPI.UrlStream(source.file);
+                        stream.name = source.label;
+                        return stream;
+                    });
+                    content.posterImageUrl = p.playlist[0].image;
+                    // console.log(JSON.stringify(p, null, 4).magenta)
+                    MovieNightAPI.finishedWithContent(content, self, process);
+                }
+                catch (e) {
+                    logError(e);
+                }
+            });
+        };
+        Ishared_eu.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Ishared_eu.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Ishared_eu;
+    })();
+    MovieNightAPI.Ishared_eu = Ishared_eu;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -1330,6 +1415,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Filehoot_com.ts" />
 ///<reference path="./resolvers/Allvid_ch.ts" />
 ///<reference path="./resolvers/Openload_co.ts" />
+///<reference path="./resolvers/Ishared_eu.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1340,7 +1426,7 @@ var MovieNightAPI;
             new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net(),
             new MovieNightAPI.Thevideo_me(), new MovieNightAPI.Mycollection_net(),
             new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch(),
-            new MovieNightAPI.Openload_co()
+            new MovieNightAPI.Openload_co(), new MovieNightAPI.Ishared_eu()
         ];
         return resolvers;
     }
@@ -1363,7 +1449,6 @@ var MovieNightAPI;
     MovieNightAPI.scrape = scrape;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
-///<reference path="../vendor/phantomjs.d.ts" />
 ///<reference path="../vendor/colors.d.ts" />
 ///<reference path="../vendor/command-line-args.d.ts" />
 ///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />

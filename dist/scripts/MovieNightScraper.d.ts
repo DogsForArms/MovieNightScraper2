@@ -19,6 +19,7 @@ declare module MovieNightAPI {
         resolveId(mediaIdentifier: string, process: ProcessNode): void;
         mediaIdExtractors: ((url: string) => string)[];
         scrape(url: string, process: ProcessNode): void;
+        private scrapeVodlockerLol(url, process);
     }
 }
 
@@ -400,6 +401,21 @@ declare module MovieNightAPI {
     }
 }
 
+/// <reference path="../../../vendor/es6-promise.d.ts" />
+/// <reference path="../../../vendor/colors.d.ts" />
+/// <reference path="../../Tools/RegExp.d.ts" />
+declare module MovieNightAPI {
+    class Ishared_eu implements Resolver<string> {
+        domain: string;
+        name: string;
+        needsClientRefetch: boolean;
+        mediaIdExtractors: ((url: string) => (string))[];
+        resolveId(mediaIdentifier: string, process: ProcessNode): void;
+        recognizesUrlMayContainContent(url: string): boolean;
+        scrape(url: string, process: ProcessNode): void;
+    }
+}
+
 /// <reference path="Resolver.d.ts" />
 /// <reference path="resolvers/Gorillavid_in.d.ts" />
 /// <reference path="resolvers/Raw.d.ts" />
@@ -417,6 +433,7 @@ declare module MovieNightAPI {
 /// <reference path="resolvers/Filehoot_com.d.ts" />
 /// <reference path="resolvers/Allvid_ch.d.ts" />
 /// <reference path="resolvers/Openload_co.d.ts" />
+/// <reference path="resolvers/Ishared_eu.d.ts" />
 declare module MovieNightAPI {
     function resolvers(): Resolver<string>[];
     function scrape(url: string, process: ProcessNode): void;

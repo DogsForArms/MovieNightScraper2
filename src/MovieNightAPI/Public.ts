@@ -16,6 +16,7 @@
 ///<reference path="./resolvers/Filehoot_com.ts" />
 ///<reference path="./resolvers/Allvid_ch.ts" />
 ///<reference path="./resolvers/Openload_co.ts" />
+///<reference path="./resolvers/Ishared_eu.ts" />
 
 
 module MovieNightAPI
@@ -29,7 +30,7 @@ module MovieNightAPI
 			new Powvideo_net(), new Bestreams_net(),	
 			new Thevideo_me(), new Mycollection_net(),
 			new Filehoot_com(), new Allvid_ch(),
-			new Openload_co()
+			new Openload_co(), new Ishared_eu()
 			//new Lolzor_com()
 			//new Vidbull_lol(), new Vidbull_com()
 		]

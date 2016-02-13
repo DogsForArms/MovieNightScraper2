@@ -15,7 +15,7 @@ module MovieNightAPI
 
 		recognizesUrlMayContainContent(url: string): boolean 
 		{
-			return extractMediaId(this, url) != undefined
+			return (extractMediaId(this, url) || /(vodlocker\.lol\/)/.execute(url)) != undefined
 		}
 
 		resolveId(mediaIdentifier: string, process: ProcessNode) 
@@ -51,11 +51,33 @@ module MovieNightAPI
 
 		mediaIdExtractors = [
 			function(url: string) { return /vodlocker\.com\/embed-(.+?)-[0-9]+?x[0-9]+?/.execute(url) },
-			function(url: string) { return /vodlocker\.com\/([^\/]+)$/.execute(url) }
+			function(url: string) { return /vodlocker\.com\/([^\/]+)(\/)?$/.execute(url) }
 		]
 
-		scrape(url: string, process: ProcessNode) {
-			extractMediaId(this, url, process)
+		scrape(url: string, process: ProcessNode) 
+		{
+			var self = this
+			if (/vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url)) 
+			{
+				self.scrapeVodlockerLol( (url + '/?video'), process)
+			}
+			else 
+			{
+				extractMediaId(this, url, process)
+			}
+		}	
+
+		private scrapeVodlockerLol(url: string, process: ProcessNode)
+		{
+			var self = this
+			console.log(url.red)
+			ResolverCommon.get(url, self, process).then(function(html){
+
+				var realUrl = /<iframe src=["'](.*)["']/i.execute(html)
+				console.log(realUrl.green)
+				extractMediaId(self, realUrl, process)
+
+			})
 		}
 	}
 }

@@ -1523,6 +1523,75 @@ var MovieNightAPI;
     MovieNightAPI.Vid_ag = Vid_ag;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Streamin_to = (function () {
+        function Streamin_to() {
+            this.domain = 'streamin.to';
+            this.name = 'Streamin.to';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /streamin\.to\/(.*?)$/.execute(url); }
+            ];
+        }
+        Streamin_to.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url0 = ('http://streamin.to/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                try {
+                    var cookies = /cookie\((.*?)\)/g.executeAll(html0).map(function (cookieStr) {
+                        var key = /'(.*?)'\s*,/.execute(cookieStr);
+                        var val = /,\s*'(.*?)'/.execute(cookieStr);
+                        var obj = {
+                            'key': key,
+                            'value': val
+                        };
+                        return obj;
+                    });
+                    var cookiesStr = cookies.reduce(function (l, c) {
+                        l += (c.key + '=' + c.value + ';');
+                        return l;
+                    }, '');
+                    cookiesStr = cookiesStr.slice(0, cookiesStr.length - 1);
+                    postParams['Cookie'] = cookiesStr;
+                    content.title = postParams.fname;
+                }
+                catch (e) {
+                    logError(e);
+                }
+                setTimeout(function () {
+                    MovieNightAPI.ResolverCommon.formPost(url0, postParams, self, process).then(function (html) {
+                        try {
+                            var jwplayerSetup = /<script.*?jwplayer.*?setup([\s\S]+?)<\/script>/.execute(html);
+                            content.streams = [new MovieNightAPI.RtmpStream(/streamer\s*?:\s*?['"](.*?)['"]/.execute(jwplayerSetup), /file\s*?:\s*?['"](.*?)['"]/.execute(jwplayerSetup))];
+                            var durationStr = /duration\s*?:\s*?["']([0-9]*?)["']/.execute(jwplayerSetup);
+                            content.duration = durationStr ? +durationStr : null;
+                            content.snapshotImageUrl = /image\s*?:\s*?["'](.*?)["']/.execute(jwplayerSetup);
+                        }
+                        catch (e) {
+                            logError(e);
+                        }
+                        MovieNightAPI.finishedWithContent(content, self, process);
+                    });
+                }, 5 * 1000);
+            });
+        };
+        Streamin_to.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Streamin_to.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Streamin_to;
+    })();
+    MovieNightAPI.Streamin_to = Streamin_to;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -1543,6 +1612,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Ishared_eu.ts" />
 ///<reference path="./resolvers/Flashx_tv.ts" />
 ///<reference path="./resolvers/Vid_ag.ts" />
+///<reference path="./resolvers/Streamin_to.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1554,7 +1624,8 @@ var MovieNightAPI;
             new MovieNightAPI.Thevideo_me(), new MovieNightAPI.Mycollection_net(),
             new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch(),
             new MovieNightAPI.Openload_co(), new MovieNightAPI.Ishared_eu(),
-            new MovieNightAPI.Flashx_tv(), new MovieNightAPI.Vid_ag()
+            new MovieNightAPI.Flashx_tv(), new MovieNightAPI.Vid_ag(),
+            new MovieNightAPI.Streamin_to()
         ];
         return resolvers;
     }

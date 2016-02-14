@@ -19,6 +19,8 @@
 ///<reference path="./resolvers/Ishared_eu.ts" />
 ///<reference path="./resolvers/Flashx_tv.ts" />
 ///<reference path="./resolvers/Vid_ag.ts" />
+///<reference path="./resolvers/Streamin_to.ts" />
+
 
 
 module MovieNightAPI
@@ -33,7 +35,8 @@ module MovieNightAPI
 			new Thevideo_me(), new Mycollection_net(),
 			new Filehoot_com(), new Allvid_ch(),
 			new Openload_co(), new Ishared_eu(),
-			new Flashx_tv(), new Vid_ag()
+			new Flashx_tv(), new Vid_ag(),
+			new Streamin_to()
 			//new Lolzor_com()
 			//new Vidbull_lol(), new Vidbull_com()
 		]

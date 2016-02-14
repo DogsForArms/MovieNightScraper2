@@ -1469,6 +1469,60 @@ var MovieNightAPI;
     MovieNightAPI.Flashx_tv = Flashx_tv;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Vid_ag = (function () {
+        function Vid_ag() {
+            this.domain = 'vid.ag';
+            this.name = 'Vid';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /vid\.ag\/(.*?)(\.html)?$/.execute(url); }
+            ];
+        }
+        Vid_ag.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://vid.ag/' + mediaIdentifier + '.html');
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                // console.log(html.blue)
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                try {
+                    content.title = /<h2.*?>(.*?)(\n|<\/h2>)/.execute(html);
+                    var jwplayerSetup = /<script[\s\S]*?(eval\([\s\S]*?)<\/script/g.executeAll(html)
+                        .map(MovieNightAPI.ResolverCommon.beautify)
+                        .filter(function (s) { return /(jwplayer)/.execute(s) != null; })[0];
+                    var sources = /sources\s*:\s*\[({[\s\S]*?})\]/.execute(jwplayerSetup);
+                    content.snapshotImageUrl = /image\s*:\s*["'](.*?)["']/.execute(jwplayerSetup);
+                    content.streams = /({.*?})/g.executeAll(sources)
+                        .map(function (sourceStr) {
+                        var stream = new MovieNightAPI.UrlStream(/file\s*:\s*["'](.*?)["']/.execute(sourceStr));
+                        stream.name = /label\s*:\s*["'](.*?)["']/.execute(sourceStr);
+                        return stream;
+                    })
+                        .filter(function (stream) {
+                        return /(mp4)/.execute(stream.url) != null;
+                    });
+                }
+                catch (e) {
+                    logError(e);
+                }
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Vid_ag.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Vid_ag.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Vid_ag;
+    })();
+    MovieNightAPI.Vid_ag = Vid_ag;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -1488,6 +1542,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Openload_co.ts" />
 ///<reference path="./resolvers/Ishared_eu.ts" />
 ///<reference path="./resolvers/Flashx_tv.ts" />
+///<reference path="./resolvers/Vid_ag.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1499,7 +1554,7 @@ var MovieNightAPI;
             new MovieNightAPI.Thevideo_me(), new MovieNightAPI.Mycollection_net(),
             new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch(),
             new MovieNightAPI.Openload_co(), new MovieNightAPI.Ishared_eu(),
-            new MovieNightAPI.Flashx_tv()
+            new MovieNightAPI.Flashx_tv(), new MovieNightAPI.Vid_ag()
         ];
         return resolvers;
     }

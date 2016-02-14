@@ -11,6 +11,8 @@
         "node_modules"
     ],
     "files": [
+        "src/MovieNightAPI/resolvers/Vid_ag.ts",
+        "src/MovieNightAPI/resolvers/Flashx_tv.ts",
         "src/MovieNightAPI/resolvers/Ishared_eu.ts",
         "src/MovieNightAPI/resolvers/Openload_co.ts",
         "src/MovieNightAPI/resolvers/Filehoot_com.ts",

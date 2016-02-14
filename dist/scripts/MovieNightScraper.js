@@ -1398,6 +1398,70 @@ var MovieNightAPI;
     MovieNightAPI.Ishared_eu = Ishared_eu;
 })(MovieNightAPI || (MovieNightAPI = {}));
 
+///<reference path="../../../vendor/es6-promise.d.ts" />
+///<reference path="../../../vendor/colors.d.ts" />
+///<reference path="../../Tools/RegExp.ts" />
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Flashx_tv = (function () {
+        function Flashx_tv() {
+            this.domain = 'flashx.tv';
+            this.name = 'Flashx';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /flashx\.tv\/embed-(.*?)(\/)?(\.html)?$/.execute(url); },
+                function (url) { return /flashx\.tv\/(.*?)(\/)?(\.html)?$/.execute(url); },
+                function (url) { return /flashx\.tv\/fxplay-(.*?)(\/)?(\.html)?$/.execute(url); },
+                function (url) { return /flashx\.pw\/embed-(.*?)(\/)?(\.html)?$/.execute(url); },
+                function (url) { return /flashx\.pw\/fxplay-(.*?)(\/)?(\.html)?$/.execute(url); },
+                function (url) { return /flashx\.pw\/(.*?)(\/)?(\.html)?$/.execute(url); }
+            ];
+        }
+        Flashx_tv.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            //http://www.flashx.pw/embed.php?c=o93k0eacrps1
+            var url0 = ('http://www.flashx.pw/fxplay-' + mediaIdentifier + '.html');
+            MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = /fdstr\s*=\s*["'](.*?)["']/.execute(html0);
+                var url = "http://www.flashx.pw/fxplay-" + mediaIdentifier + ".html";
+                MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                    try {
+                        var uglies = /<script[\s\S]*?(eval\([\s\S]+?)<\/script>/g.executeAll(html);
+                        var pretties = uglies.map(MovieNightAPI.ResolverCommon.beautify);
+                        pretties = pretties.filter(function (s) { return /(jwplayer)/.execute(s) != null; });
+                        var jwplayerSetupStr = pretties[0];
+                        if (jwplayerSetupStr == null) {
+                            jwplayerSetupStr = /jwplayer.*setup([\s\S]*?)<\/script>/.execute(html);
+                        }
+                        content.streams = /sources\s*:\s*\[([\s\S]+?)\]/g.executeAll(jwplayerSetupStr)
+                            .map(function (sourceStr) {
+                            var stream = new MovieNightAPI.UrlStream(/file\s*:\s*["'](.*?)["']/.execute(sourceStr));
+                            stream.name = /label\s*:\s*["'](.*?)["']/.execute(sourceStr);
+                            return stream;
+                        });
+                        var durationStr = /duration\s*:\s*["']([0-9]+)["']/.execute(jwplayerSetupStr);
+                        content.duration = durationStr ? +durationStr : null;
+                        content.snapshotImageUrl = /image\s*:\s*["'](.*?)["']/.execute(jwplayerSetupStr);
+                    }
+                    catch (e) {
+                        logError(e);
+                    }
+                    MovieNightAPI.finishedWithContent(content, self, process);
+                });
+            });
+        };
+        Flashx_tv.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Flashx_tv.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Flashx_tv;
+    })();
+    MovieNightAPI.Flashx_tv = Flashx_tv;
+})(MovieNightAPI || (MovieNightAPI = {}));
+
 ///<reference path="./Resolver.ts" />
 ///<reference path="./resolvers/Gorillavid_in.ts" />
 ///<reference path="./resolvers/Raw.ts" />
@@ -1416,6 +1480,7 @@ var MovieNightAPI;
 ///<reference path="./resolvers/Allvid_ch.ts" />
 ///<reference path="./resolvers/Openload_co.ts" />
 ///<reference path="./resolvers/Ishared_eu.ts" />
+///<reference path="./resolvers/Flashx_tv.ts" />
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1426,7 +1491,8 @@ var MovieNightAPI;
             new MovieNightAPI.Powvideo_net(), new MovieNightAPI.Bestreams_net(),
             new MovieNightAPI.Thevideo_me(), new MovieNightAPI.Mycollection_net(),
             new MovieNightAPI.Filehoot_com(), new MovieNightAPI.Allvid_ch(),
-            new MovieNightAPI.Openload_co(), new MovieNightAPI.Ishared_eu()
+            new MovieNightAPI.Openload_co(), new MovieNightAPI.Ishared_eu(),
+            new MovieNightAPI.Flashx_tv()
         ];
         return resolvers;
     }

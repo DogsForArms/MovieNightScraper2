@@ -1,41 +1,55 @@
 {
-    "compilerOptions": {
-        "module": "commonjs",
-        "noImplicitAny": true,
-        "removeComments": true,
-        "preserveConstEnums": true,
-        "out": "builted/local/tsc.js",
-        "sourceMap": true
-    },
-    "exclude": [
-        "node_modules"
-    ],
-    "files": [
-        "src/MovieNightAPI/resolvers/Vid_ag.ts",
-        "src/MovieNightAPI/resolvers/Flashx_tv.ts",
-        "src/MovieNightAPI/resolvers/Ishared_eu.ts",
-        "src/MovieNightAPI/resolvers/Openload_co.ts",
-        "src/MovieNightAPI/resolvers/Filehoot_com.ts",
-        "src/MovieNightAPI/resolvers/Lolzor_com.ts",
-        "src/MovieNightAPI/resolvers/Mycollection_net.ts",
-        "src/MovieNightAPI/resolvers/Thevideo_me.ts",
-        "src/MovieNightAPI/resolvers/Vidbull_com.ts",
-        "src/MovieNightAPI/resolvers/Vidbull_lol.ts",
-        "src/MovieNightAPI/resolvers/Exashare_com.ts",
-        "src/MovieNightAPI/resolvers/Bestreams_net.ts",
-        "src/MovieNightAPI/resolvers/Bakavideo_tv.ts",
-        "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
-        "src/MovieNightAPI/resolvers/Gorillavid_in.ts",
-        "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
-        "src/MovieNightAPI/resolvers/Raw.ts",
-        "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
-        "src/MovieNightAPI/Content.ts",
-        "src/MovieNightAPI/ProcessNode.ts",
-        "src/MovieNightAPI/Public.ts",
-        "src/MovieNightAPI/Resolver.ts",
-        "src/MovieNightAPI/ResolverCommon.ts",
-        "src/Tools/RegExp.ts",
-        "src/Tools/Logging.ts",
-        "src/CmdLine.ts"
-    ]
+  "compilerOptions": {
+    "module": "commonjs",
+    "sourceMap": true,
+    "out": "./build/Scraper.js"
+  },
+  "exclude": [
+    "vendor/require.d.ts"
+  ],
+  "filesGlob": [
+    "src/**/*.ts",
+    "vendor/**/*.ts"
+  ],
+  "atom": {
+    "rewriteTsconfig": true,
+    "formatOnSave": true
+  },
+  "files": [
+    "src/CmdLine.ts",
+    "src/MovieNightAPI/Content.ts",
+    "src/MovieNightAPI/ProcessNode.ts",
+    "src/MovieNightAPI/Public.ts",
+    "src/MovieNightAPI/Resolver.ts",
+    "src/MovieNightAPI/ResolverCommon.ts",
+    "src/MovieNightAPI/resolvers/Allmyvideos_net.ts",
+    "src/MovieNightAPI/resolvers/Allvid_ch.ts",
+    "src/MovieNightAPI/resolvers/Bakavideo_tv.ts",
+    "src/MovieNightAPI/resolvers/Bestreams_net.ts",
+    "src/MovieNightAPI/resolvers/Exashare_com.ts",
+    "src/MovieNightAPI/resolvers/Filehoot_com.ts",
+    "src/MovieNightAPI/resolvers/Flashx_tv.ts",
+    "src/MovieNightAPI/resolvers/Gorillavid_in.ts",
+    "src/MovieNightAPI/resolvers/Ishared_eu.ts",
+    "src/MovieNightAPI/resolvers/Lolzor_com.ts",
+    "src/MovieNightAPI/resolvers/Mycollection_net.ts",
+    "src/MovieNightAPI/resolvers/Openload_co.ts",
+    "src/MovieNightAPI/resolvers/Powvideo_net.ts",
+    "src/MovieNightAPI/resolvers/Raw.ts",
+    "src/MovieNightAPI/resolvers/Streamin_to.ts",
+    "src/MovieNightAPI/resolvers/Thevideo_me.ts",
+    "src/MovieNightAPI/resolvers/Vid_ag.ts",
+    "src/MovieNightAPI/resolvers/Vidbull_com.ts",
+    "src/MovieNightAPI/resolvers/Vidbull_lol.ts",
+    "src/MovieNightAPI/resolvers/Vidlockers_ag.ts",
+    "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
+    "src/Tools/Logging.ts",
+    "src/Tools/RegExp.ts",
+    "vendor/colors.d.ts",
+    "vendor/command-line-args.d.ts",
+    "vendor/es6-promise.d.ts",
+    "vendor/form-data.d.ts",
+    "vendor/node.d.ts",
+    "vendor/request.d.ts"
+  ]
 }

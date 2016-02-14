@@ -6,9 +6,9 @@
 ///<reference path="../ProcessNode.ts" />
 ///<reference path="../Content.ts" />
 
-var Base64 = require('../../node_modules/js-base64/base64.js').Base64;
-// var Base64 = require('js-base64')
-module MovieNightAPI 
+// var Base64 = require('../../node_modules/js-base64/base64.js').Base64;
+var Base64 = require('js-base64')
+module MovieNightAPI
 {
 	export class Bakavideo_tv implements Resolver<string>
 	{
@@ -24,13 +24,13 @@ module MovieNightAPI
 		mediaIdExtractors = [
 			function(url: string) { return /bakavideo\.tv\/embed\/([a-zA-Z\d]+?)$/.execute(url) }
 		]
-		resolveId(mediaIdentifier: string, process: ProcessNode) 
+		resolveId(mediaIdentifier: string, process: ProcessNode)
 		{
 			console.log("MEDIA ID: " + mediaIdentifier)
 			var self = this
 			var url = ('https://bakavideo.tv/get/files.embed?f=' + mediaIdentifier)
 			ResolverCommon.get(url, self, process).then(function(jsonStr){
-				
+
 				try {
 					var json = JSON.parse(jsonStr)
 					var html = Base64.decode(json.content)
@@ -45,12 +45,12 @@ module MovieNightAPI
 				} catch (e) { logError(e) }
 
 				finishedWithContent(content, self, process)
-				
+
 			})
 
 		}
 
-		scrape(url: string, process: ProcessNode)	
+		scrape(url: string, process: ProcessNode)
 		{
 			extractMediaId(this, url, process)
 		}

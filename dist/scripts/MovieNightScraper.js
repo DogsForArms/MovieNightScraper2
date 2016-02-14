@@ -721,18 +721,25 @@ var MovieNightAPI;
         Vidlockers_ag.prototype.recognizesUrlMayContainContent = function (url) {
             return MovieNightAPI.extractMediaId(this, url) != undefined;
         };
+        //http://www.vidlockers.ag/enk0bo47mcc5/the.walking.dead.s01e04.hdtv.xvid-fever.avi.html
         Vidlockers_ag.prototype.resolveId = function (mediaIdentifier, process) {
             var self = this;
             var url0 = ('http://vidlockers.ag/' + mediaIdentifier + '.html');
+            // console.log(url0.magenta)
             MovieNightAPI.ResolverCommon.get(url0, self, process).then(function (html0) {
                 var postParams = MovieNightAPI.getHiddenPostParams(html0);
                 MovieNightAPI.ResolverCommon.formPost(url0, postParams, self, process).then(function (html) {
                     var content = new MovieNightAPI.Content(self, mediaIdentifier);
                     try {
-                        var fn = RegExp.curryExecute(html);
+                        var evalScript = /player_code.*?<script.*?>(eval\([\s\S]*?)<\/script>/.execute(html);
+                        // console.log(evalScript.magenta)
+                        var beautiful = MovieNightAPI.ResolverCommon.beautify(evalScript);
+                        // console.log(beautiful.blue)
+                        var fn = RegExp.curryExecute(beautiful);
                         content.snapshotImageUrl = fn(/image:.*["'](.+?)["']/);
-                        var stream = new MovieNightAPI.UrlStream(fn(/file:.*["'](.*?)["']/));
+                        var stream = new MovieNightAPI.UrlStream(fn(/src.*?=.*?["'](.*?)["']/));
                         content.streams = [stream];
+                        // console.log(stream.url.blue)
                         var durationStr = fn(/duration:.*["']([0-9]+?)["']/);
                         content.duration = durationStr ? +durationStr : null;
                         var urlComponents = stream.url.split('/');

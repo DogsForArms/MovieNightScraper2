@@ -53,11 +53,11 @@ module MovieNightAPI {
 
 
                             } else {
-                                console.log("<<<")
-                                console.log("REQUEST ERROR".red.bold.underline)
-                                console.log(error)
-                                console.log(JSON.stringify(options, null, 4))
-                                console.log(">>>")
+                                console.debug("<<<")
+                                console.debug("REQUEST ERROR".red.bold.underline)
+                                console.debug(error)
+                                console.debug(JSON.stringify(options, null, 4))
+                                console.debug(">>>")
 
                                 // var internetError = new ResolverState(-4, self, { 'error': error, 'url': options.url })
                                 var failure = new ResolverError(ResolverErrorCode.InternetFailure, "The internet failed when looking up url <" + options.url + ">", mediaOwnerInfo)
@@ -72,7 +72,7 @@ module MovieNightAPI {
                 makeRequest(options)
             })
             q.catch(function(failure: ResolverError) {
-                console.log("network error failed".red)
+                console.debug("network error failed".red)
 
                 process.processOne({ type: ResultType.Error, error: failure })
             })

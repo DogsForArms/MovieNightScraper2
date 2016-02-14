@@ -26,42 +26,42 @@ OTHER DEALINGS IN THE SOFTWARE.
 
 
 interface String {
-	//colors
-	black : String
-	red : String
-	green : String
-	yellow : String
-	blue : String
-	magenta : String
-	cyan : String
-	white : String
-	gray : String
-	grey : String
+    //colors
+    black: string
+    red: string
+    green: string
+    yellow: string
+    blue: string
+    magenta: string
+    cyan: string
+    white: string
+    gray: string
+    grey: string
 
-	//bg
-	bgBlack : String
-	bgRed : String
-	bgGreen : String
-	bgYellow : String
-	bgBlue : String
-	bgMagenta : String
-	bgCyan : String
-	bgWhite : String
+    //bg
+    bgBlack: string
+    bgRed: string
+    bgGreen: string
+    bgYellow: string
+    bgBlue: string
+    bgMagenta: string
+    bgCyan: string
+    bgWhite: string
 
-	//styles
-	reset : String
-	bold : String
-	dim : String
-	italic : String
-	underline : String
-	inverse : String
-	hidden : String
-	strikethrough : String
+    //styles
+    reset: string
+    bold: string
+    dim: string
+    italic: string
+    underline: string
+    inverse: string
+    hidden: string
+    strikethrough: string
 
-	//extras
-	rainbow : String
-	zebra : String
-	america : String
-	trap : String
-	random : String
+    //extras
+    rainbow: string
+    zebra: string
+    america: string
+    trap: string
+    random: string
 }

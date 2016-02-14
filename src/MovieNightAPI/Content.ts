@@ -69,17 +69,17 @@ module MovieNightAPI
 		})
 
 
-		var coloredComponentsString = components.map(function(component) {
-			var remove = (removeThese.indexOf(component) != -1)
-			if (remove) {
-				return component.red
-			}
-			else {
-				return component.green
-			}
-		}).join(' ')
+		// var coloredComponentsString = components.map(function(component) {
+		// 	var remove = (removeThese.indexOf(component) != -1)
+		// 	if (remove) {
+		// 		return component.red
+		// 	}
+		// 	else {
+		// 		return component.green
+		// 	}
+		// }).join(' ')
 
-		console.log(coloredComponentsString)
+		// console.log(coloredComponentsString)
 
 		var done = false
 		var chopEnd = scoresAndComponents.reduce(function(l, c, i) {

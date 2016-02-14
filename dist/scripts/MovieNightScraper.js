@@ -69,8 +69,9 @@ var MovieNightAPI;
         };
         Vodlocker_com.prototype.scrape = function (url, process) {
             var self = this;
-            if (/vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url)) {
-                self.scrapeVodlockerLol((url + '/?video'), process);
+            var extractedLolName = /vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url);
+            if (extractedLolName != null) {
+                self.scrapeVodlockerLol(('http://vodlocker.lol/' + extractedLolName + '/?video'), process);
             }
             else {
                 MovieNightAPI.extractMediaId(this, url, process);
@@ -78,10 +79,8 @@ var MovieNightAPI;
         };
         Vodlocker_com.prototype.scrapeVodlockerLol = function (url, process) {
             var self = this;
-            console.log(url.red);
             MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
                 var realUrl = /<iframe src=["'](.*)["']/i.execute(html);
-                console.log(realUrl.green);
                 MovieNightAPI.extractMediaId(self, realUrl, process);
             });
         };
@@ -471,16 +470,16 @@ var MovieNightAPI;
             var value = (removeThese.indexOf(component) === -1) ? true : false;
             return { 'component': component, 'keep': value };
         });
-        var coloredComponentsString = components.map(function (component) {
-            var remove = (removeThese.indexOf(component) != -1);
-            if (remove) {
-                return component.red;
-            }
-            else {
-                return component.green;
-            }
-        }).join(' ');
-        console.log(coloredComponentsString);
+        // var coloredComponentsString = components.map(function(component) {
+        // 	var remove = (removeThese.indexOf(component) != -1)
+        // 	if (remove) {
+        // 		return component.red
+        // 	}
+        // 	else {
+        // 		return component.green
+        // 	}
+        // }).join(' ')
+        // console.log(coloredComponentsString)
         var done = false;
         var chopEnd = scoresAndComponents.reduce(function (l, c, i) {
             if (done || !c.keep) {
@@ -1533,20 +1532,27 @@ if (options.help || !hasNeededArgs) {
     console.log(usage);
 }
 else {
+    if (!options.verbose) {
+        console.debug = function (message) {
+            var optionalParams = [];
+            for (var _i = 1; _i < arguments.length; _i++) {
+                optionalParams[_i - 1] = arguments[_i];
+            }
+        };
+    }
+    else {
+        console.debug = console.log;
+    }
     if (options.scrape) {
-        // console.log(this.name())
         var resultsCount = 0;
         var usedUids = [];
         var head = new MovieNightAPI.ProcessNode(function (results, process) {
-            // console.log("scrape result: " + options.scrape)
-            // console.log("results: " + JSON.stringify(results, null, 4).red)
-            // console.log("finished: ".blue, process.finished)
             results.forEach(function (result) {
                 if (result.type == MovieNightAPI.ResultType.Content && usedUids[result.content.uid] == undefined) {
                     usedUids[result.content.uid] = true;
                     resultsCount++;
-                    console.log((resultsCount + ') ' + result.content.title + ' | ' + result.content.mediaOwnerName).green.bold);
-                    console.log(JSON.stringify(result.content, null, 4).blue.italic);
+                    console.log((resultsCount + ') ' + result.content.title + '\t|\t' + result.content.mediaOwnerName + '\t|\t' + result.content.mediaIdentifier).green.bold);
+                    console.debug(JSON.stringify(result.content, null, 4).blue + '');
                 }
                 else {
                 }

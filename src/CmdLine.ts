@@ -99,28 +99,34 @@ if (options.help || !hasNeededArgs)
 } 
 else 
 {
+	if (!options.verbose)
+	{
+			console.debug = function(message?: string, ...optionalParams: any[]): void {}
+	}
+	else
+	{
+		console.debug = console.log
+	}
+	
 	if (options.scrape)
 	{
-		// console.log(this.name())
-
 		var resultsCount = 0
 		var usedUids: any = []
 
 		var head = new MovieNightAPI.ProcessNode(function(results: MovieNightAPI.Result[], process: MovieNightAPI.ProcessNode) {
-			// console.log("scrape result: " + options.scrape)
-			// console.log("results: " + JSON.stringify(results, null, 4).red)
-			// console.log("finished: ".blue, process.finished)
+			
+
 			results.forEach(function(result){
 				if (result.type == MovieNightAPI.ResultType.Content && usedUids[result.content.uid] == undefined)
 				{
 					usedUids[result.content.uid] = true
 					resultsCount++
-					console.log((resultsCount + ') ' + result.content.title + ' | ' + result.content.mediaOwnerName).green.bold)
-					console.log(JSON.stringify(result.content,null,4).blue.italic)
+					console.log((resultsCount + ') ' + result.content.title + '\t|\t' + result.content.mediaOwnerName + '\t|\t' + result.content.mediaIdentifier).green.bold)
+					console.debug(JSON.stringify(result.content, null, 4).blue + '')
 				}
 				else
 				{
-
+					// console.debug(JSON.stringify(result.error, null, 4).red + '')
 				}
 			})
 

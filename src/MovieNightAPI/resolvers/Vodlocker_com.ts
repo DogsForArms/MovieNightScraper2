@@ -57,9 +57,11 @@ module MovieNightAPI
 		scrape(url: string, process: ProcessNode) 
 		{
 			var self = this
-			if (/vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url)) 
+
+			var extractedLolName = /vodlocker\.lol\/([^\/]+)(\/\?video)?(\/)?$/.execute(url)
+			if (extractedLolName != null) 
 			{
-				self.scrapeVodlockerLol( (url + '/?video'), process)
+				self.scrapeVodlockerLol(('http://vodlocker.lol/' + extractedLolName + '/?video'), process)
 			}
 			else 
 			{
@@ -70,11 +72,9 @@ module MovieNightAPI
 		private scrapeVodlockerLol(url: string, process: ProcessNode)
 		{
 			var self = this
-			console.log(url.red)
 			ResolverCommon.get(url, self, process).then(function(html){
 
 				var realUrl = /<iframe src=["'](.*)["']/i.execute(html)
-				console.log(realUrl.green)
 				extractMediaId(self, realUrl, process)
 
 			})

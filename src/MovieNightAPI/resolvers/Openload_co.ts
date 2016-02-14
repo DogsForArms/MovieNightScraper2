@@ -11,7 +11,8 @@ module MovieNightAPI
 		needsClientRefetch = true
 
 		mediaIdExtractors: ((url: string) => (string))[] = [
-			function(url) { return /openload\.co\/f\/([\da-zA-Z]+?)(\/)?(\.html)?$/.execute(url)}
+			function(url) { return /openload\.co\/f\/(.+?)\//.execute(url) },
+			function(url) { return /openload\.co\/f\/(.+?)(\.html)?$/.execute(url) }
 		]
 
 		resolveId(mediaIdentifier: string, process: ProcessNode)

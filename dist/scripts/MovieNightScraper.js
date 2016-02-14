@@ -1296,7 +1296,8 @@ var MovieNightAPI;
             this.name = 'Openload.co';
             this.needsClientRefetch = true;
             this.mediaIdExtractors = [
-                function (url) { return /openload\.co\/f\/([\da-zA-Z]+?)(\/)?(\.html)?$/.execute(url); }
+                function (url) { return /openload\.co\/f\/(.+?)\//.execute(url); },
+                function (url) { return /openload\.co\/f\/(.+?)(\.html)?$/.execute(url); }
             ];
         }
         Openload_co.prototype.resolveId = function (mediaIdentifier, process) {

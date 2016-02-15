@@ -35,6 +35,7 @@
     "src/MovieNightAPI/resolvers/Mycollection_net.ts",
     "src/MovieNightAPI/resolvers/Openload_co.ts",
     "src/MovieNightAPI/resolvers/Powvideo_net.ts",
+    "src/MovieNightAPI/resolvers/PromptFile_com.ts",
     "src/MovieNightAPI/resolvers/Raw.ts",
     "src/MovieNightAPI/resolvers/Streamin_to.ts",
     "src/MovieNightAPI/resolvers/Thevideo_me.ts",

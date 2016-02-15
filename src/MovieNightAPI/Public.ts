@@ -20,49 +20,44 @@
 ///<reference path="./resolvers/Flashx_tv.ts" />
 ///<reference path="./resolvers/Vid_ag.ts" />
 ///<reference path="./resolvers/Streamin_to.ts" />
+///<reference path="./resolvers/PromptFile_com.ts" />
 
 
 
-module MovieNightAPI
-{
-	export function resolvers(): Resolver<string>[]
-	{
-		var resolvers =  [
-			new Vodlocker_com(), new Allmyvideos_net(), 
-			new Gorillavid_in(), new Exashare_com(), 
-			new Vidlockers_ag(), new Bakavideo_tv(), 
-			new Powvideo_net(), new Bestreams_net(),	
-			new Thevideo_me(), new Mycollection_net(),
-			new Filehoot_com(), new Allvid_ch(),
-			new Openload_co(), new Ishared_eu(),
-			new Flashx_tv(), new Vid_ag(),
-			new Streamin_to()
-			//new Lolzor_com()
-			//new Vidbull_lol(), new Vidbull_com()
-		]
-		return resolvers
-	}
+module MovieNightAPI {
+    export function resolvers(): Resolver<string>[] {
+        var resolvers = [
+            new Vodlocker_com(), new Allmyvideos_net(),
+            new Gorillavid_in(), new Exashare_com(),
+            new Vidlockers_ag(), new Bakavideo_tv(),
+            new Powvideo_net(), new Bestreams_net(),
+            new Thevideo_me(), new Mycollection_net(),
+            new Filehoot_com(), new Allvid_ch(),
+            new Openload_co(), new Ishared_eu(),
+            new Flashx_tv(), new Vid_ag(),
+            new Streamin_to(), new PromptFile_com()
+            //new Lolzor_com()
+            //new Vidbull_lol(), new Vidbull_com()
+        ]
+        return resolvers
+    }
 
-	export function scrape(url: string, process: ProcessNode)
-	{
-		var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(url) })
+    export function scrape(url: string, process: ProcessNode) {
+        var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(url) })
 
-		if (responders.length == 0) {
-			var raw = new Raw()
-			raw.scrape(url, process)
-		}
-		else
-		{
-			responders.map(function(resolver)
-			{ 
-				var childProcess = process.newChildProcess()
-				return { "resolver": resolver, "process": childProcess }
-			}).forEach( function(pair)
-			{
-				pair.resolver.scrape(url, pair.process) 
-			})
-		}
-		
-	}
+        if (responders.length == 0) {
+            var raw = new Raw()
+            raw.scrape(url, process)
+        }
+        else {
+            responders.map(function(resolver) {
+                var childProcess = process.newChildProcess()
+                return { "resolver": resolver, "process": childProcess }
+            }).forEach(function(pair) {
+                pair.resolver.scrape(url, pair.process)
+            })
+        }
+
+    }
 
 }

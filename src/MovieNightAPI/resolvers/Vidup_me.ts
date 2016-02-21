@@ -5,8 +5,6 @@ module MovieNightAPI {
         name = 'Vidup'
         needsClientRefetch = true
 
-        //http://beta.vidup.me/embed-0pi9z8hcllgh-640x360.html
-        //http://beta.vidup.me/0pi9z8hcllgh
         mediaIdExtractors: ((url: string) => (string))[] = [
             function(url) { return /vidup\.me\/embed-([a-zA-Z\d]*?)-/.execute(url) },
             function(url) { return /vidup\.me\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) }

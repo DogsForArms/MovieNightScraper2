@@ -34,7 +34,7 @@ module MovieNightAPI {
                 }
                 else {
                     ResolverCommon.get(url, self, process).then(function(html) {
-
+                        console.log("LOOKING FOR A ALLMYVID".red)
                         var postParams = getHiddenPostParams(html)
                         // console.log(JSON.stringify(postParams, null, 4).italic)
                         ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
@@ -80,6 +80,7 @@ module MovieNightAPI {
         mediaIdExtractors = [
             function(url: string) { return /allmyvideos\.net\/v\/(.*)/.execute(url) },
             function(url: string) { return /allmyvideos\.net\/embed-(.*?)-/.execute(url) },
+            function(url: string) { return /allmyvideos\.net\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) }
             // /allmyvideos\.net\/(.*)/
         ]
 

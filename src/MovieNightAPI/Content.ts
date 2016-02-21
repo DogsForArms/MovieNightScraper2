@@ -51,9 +51,8 @@ module MovieNightAPI {
         'iNTERNAL', 'BDRip']
     export function niceFilter(rawTitle: string) {
         if (!rawTitle) { return null; }
-        //delimit by . space - _
-        var components = rawTitle.split(/[\.\s,\-\_+]+/)
 
+        var components = rawTitle.split(/[\.\s,\-\_+]+/)
 
         var scoresAndComponents = components.map(function(component) {
             var value = (removeThese.indexOf(component) === -1) ? true : false
@@ -70,7 +69,7 @@ module MovieNightAPI {
         // 		return component.green
         // 	}
         // }).join(' ')
-		//
+        //
         // console.log(coloredComponentsString)
 
         var done = false

@@ -346,6 +346,17 @@ var MovieNightAPI;
                             }
                             return false;
                         });
+                        var urlsToSuccess = {};
+                        var completionCount = 0;
+                        var reportResponder = function (url, success) {
+                            urlsToSuccess[url] = success;
+                            completionCount++;
+                            if (completionCount == urls.length - 1) {
+                                Object.keys(urlsToSuccess).forEach(function (k) {
+                                    console.debug(urlsToSuccess[k] ? k.yellow.inverse : k.yellow);
+                                });
+                            }
+                        };
                         if (urls.length == 0) {
                             var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
                             process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
@@ -361,7 +372,9 @@ var MovieNightAPI;
                                 MovieNightAPI.ResolverCommon.getMimeType(pair.url, tempMediaOwner, pair.process).then(function (mimeType) {
                                     if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process)) {
                                         var responders = MovieNightAPI.resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(pair.url); });
-                                        if (responders.length == 0) {
+                                        var foundResponders = (responders.length > 0);
+                                        reportResponder(pair.url, foundResponders);
+                                        if (!foundResponders) {
                                             var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
                                             pair.process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
                                         }
@@ -540,6 +553,7 @@ var MovieNightAPI;
             this.mediaIdExtractors = [
                 function (url) { return /allmyvideos\.net\/v\/(.*)/.execute(url); },
                 function (url) { return /allmyvideos\.net\/embed-(.*?)-/.execute(url); },
+                function (url) { return /allmyvideos\.net\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url); }
             ];
         }
         Allmyvideos_net.prototype.recognizesUrlMayContainContent = function (url) {
@@ -558,6 +572,7 @@ var MovieNightAPI;
                 }
                 else {
                     MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                        console.log("LOOKING FOR A ALLMYVID".red);
                         var postParams = MovieNightAPI.getHiddenPostParams(html);
                         MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
                             var fn = RegExp.curryExecute(html);

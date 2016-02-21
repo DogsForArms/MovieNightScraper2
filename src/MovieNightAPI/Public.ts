@@ -21,7 +21,8 @@
 ///<reference path="./resolvers/Vid_ag.ts" />
 ///<reference path="./resolvers/Streamin_to.ts" />
 ///<reference path="./resolvers/PromptFile_com.ts" />
-
+///<reference path="./resolvers/Neodrive_co.ts" />
+///<reference path="./resolvers/Briskfile_com.ts" />
 
 
 module MovieNightAPI {
@@ -35,7 +36,9 @@ module MovieNightAPI {
             new Filehoot_com(), new Allvid_ch(),
             new Openload_co(), new Ishared_eu(),
             new Flashx_tv(), new Vid_ag(),
-            new Streamin_to(), new PromptFile_com()
+            new Streamin_to(), new PromptFile_com(),
+            new Briskfile_com()
+            //new Neodrive_co() //forbidden
             //new Lolzor_com()
             //new Vidbull_lol(), new Vidbull_com()
         ]

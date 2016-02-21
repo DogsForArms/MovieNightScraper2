@@ -14,6 +14,10 @@ module MovieNightAPI {
             return Unpack.unpack(ugly)
         }
 
+        export function getAll(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string> {
+            return request({ 'method': 'GET', 'url': url }, mediaOwnerInfo, process, true)
+        }
+
         export function get(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string> {
             return request({ 'method': 'GET', 'url': url }, mediaOwnerInfo, process)
         }
@@ -23,7 +27,7 @@ module MovieNightAPI {
         export function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string> {
             return request({ 'method': 'HEAD', 'url': url, 'timeout': 5 * 1000 }, mediaOwnerInfo, process)
         }
-        export function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string> {
+        export function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode, getAll?: boolean): Promise<string> {
 
             var q = new Promise<string>(function(resolve, reject) {
                 var self = this
@@ -33,12 +37,10 @@ module MovieNightAPI {
                     return (options.maxAttempts > 0 && (retryOnErrorCodes.indexOf(error.code) != -1))
                 }
                 //set retry parameters
-                options.maxAttempts = 5
+                options.maxAttempts = 0
                 options.retryDelay = 800 + Math.random() * 1000
 
-
                 var makeRequest = function(options: any) {
-                    // console.log("MAKING A REQUEST: " + JSON.stringify(options).bold)
                     Request(options, function(error: any, response: any, data: any) {
                         if (error) {
                             if (retryRequest(error, options)) {
@@ -65,7 +67,12 @@ module MovieNightAPI {
                             }
 
                         } else {
-                            resolve((options.method == 'HEAD') ? response.headers['content-type'] : data)
+                            if (getAll) {
+                                resolve(response)
+                            }
+                            else {
+                                resolve((options.method == 'HEAD') ? response.headers['content-type'] : data)
+                            }
                         }
                     })
                 }

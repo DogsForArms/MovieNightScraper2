@@ -17,14 +17,14 @@ module MovieNightAPI
 		resolveId(mediaIdentifier: string, process: ProcessNode)
 		{
 			var self = this
-			
+
 			var url0 = ('http://streamin.to/' + mediaIdentifier)
 
-			ResolverCommon.get(url0, self, process).then(function(html0){				
+			ResolverCommon.get(url0, self, process).then(function(html0){
 
 				var content = new Content(self, mediaIdentifier)
 				var postParams = getHiddenPostParams(html0)
-				try 
+				try
 				{
 					var cookies = /cookie\((.*?)\)/g.executeAll(html0).map(function(cookieStr) {
 						var key = /'(.*?)'\s*,/.execute(cookieStr)
@@ -60,7 +60,7 @@ module MovieNightAPI
 					})
 
 				}, 5*1000)
-				
+
 			})
 		}
 

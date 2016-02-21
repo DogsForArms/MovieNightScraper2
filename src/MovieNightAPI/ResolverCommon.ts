@@ -25,7 +25,7 @@ module MovieNightAPI {
             return request({ 'method': 'POST', 'url': url, 'formData': postParams }, mediaOwnerInfo, process)
         }
         export function getMimeType(url: string, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode): Promise<string> {
-            return request({ 'method': 'HEAD', 'url': url, 'timeout': 5 * 1000 }, mediaOwnerInfo, process)
+            return request({ 'method': 'HEAD', 'url': url, 'timeout': 20 * 1000 }, mediaOwnerInfo, process)
         }
         export function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode, getAll?: boolean): Promise<string> {
 

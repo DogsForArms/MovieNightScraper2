@@ -45,6 +45,7 @@
     "src/MovieNightAPI/resolvers/Vidbull_com.ts",
     "src/MovieNightAPI/resolvers/Vidbull_lol.ts",
     "src/MovieNightAPI/resolvers/Vidlockers_ag.ts",
+    "src/MovieNightAPI/resolvers/Vidup_me.ts",
     "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
     "src/Tools/Logging.ts",
     "src/Tools/RegExp.ts",

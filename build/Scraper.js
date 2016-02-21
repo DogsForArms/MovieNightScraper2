@@ -572,7 +572,6 @@ var MovieNightAPI;
                 }
                 else {
                     MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
-                        console.log("LOOKING FOR A ALLMYVID".red);
                         var postParams = MovieNightAPI.getHiddenPostParams(html);
                         MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
                             var fn = RegExp.curryExecute(html);

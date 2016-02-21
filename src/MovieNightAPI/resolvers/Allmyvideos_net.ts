@@ -34,7 +34,7 @@ module MovieNightAPI {
                 }
                 else {
                     ResolverCommon.get(url, self, process).then(function(html) {
-                        console.log("LOOKING FOR A ALLMYVID".red)
+                        // console.log("LOOKING FOR A ALLMYVID".red)
                         var postParams = getHiddenPostParams(html)
                         // console.log(JSON.stringify(postParams, null, 4).italic)
                         ResolverCommon.formPost(url, postParams, self, process).then(function(html) {

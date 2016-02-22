@@ -47,6 +47,7 @@
     "src/MovieNightAPI/resolvers/Vidlockers_ag.ts",
     "src/MovieNightAPI/resolvers/Vidto_me.ts",
     "src/MovieNightAPI/resolvers/Vidup_me.ts",
+    "src/MovieNightAPI/resolvers/Vidzi_tv.ts",
     "src/MovieNightAPI/resolvers/Vodlocker_com.ts",
     "src/Tools/Logging.ts",
     "src/Tools/RegExp.ts",

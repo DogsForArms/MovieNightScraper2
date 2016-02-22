@@ -30,6 +30,8 @@ module MovieNightAPI {
                                 return stream
                             })
                             content.snapshotImageUrl = /image\s*:\s*["'](.*?)['"]/.execute(beautiful)
+                            var durationStr = /duration\s*:\s*["'](.*?)["']/.execute(beautiful)
+                            content.duration = durationStr ? +durationStr : null
                         } catch (e) { logError(e) }
                         finishedWithContent(content, self, process)
                     })

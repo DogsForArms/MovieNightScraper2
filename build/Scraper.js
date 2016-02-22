@@ -1620,6 +1620,8 @@ var MovieNightAPI;
                                 return stream;
                             });
                             content.snapshotImageUrl = /image\s*:\s*["'](.*?)['"]/.execute(beautiful);
+                            var durationStr = /duration\s*:\s*["'](.*?)["']/.execute(beautiful);
+                            content.duration = durationStr ? +durationStr : null;
                         }
                         catch (e) {
                             logError(e);
@@ -1641,6 +1643,52 @@ var MovieNightAPI;
 })(MovieNightAPI || (MovieNightAPI = {}));
 var MovieNightAPI;
 (function (MovieNightAPI) {
+    var Vidzi_tv = (function () {
+        function Vidzi_tv() {
+            this.domain = 'vidzi.tv';
+            this.name = 'Vidzi';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /vidzi\.tv\/([a-zA-Z\d]*?)(\/.*|\.html)?$/.execute(url); }
+            ];
+        }
+        Vidzi_tv.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ("http://vidzi.tv/" + mediaIdentifier + ".html");
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = /<title>watch\s*?(.*?)<\/title>/i.execute(html);
+                try {
+                    var pretty = MovieNightAPI.ResolverCommon.beautify(/<script.*?>(eval\([\s\S]*?)<\/script>/.execute(html));
+                    var sources = /sources\s*:\s*\[([\s\S]*?)\]/.execute(pretty);
+                    content.streams = /\{([\s\S]*?)\}/g.executeAll(pretty).map(function (sourceStr) {
+                        return /file\s*:\s*["'](.*?)['"]/.execute(sourceStr);
+                    }).filter(function (fileUrl) {
+                        return (/(v\.mp4)/.execute(fileUrl) != null);
+                    }).map(function (fileUrl) {
+                        var stream = new MovieNightAPI.UrlStream(fileUrl);
+                        stream.mimeType = 'application/octet-stream';
+                        return stream;
+                    });
+                }
+                catch (e) {
+                    logError(e);
+                }
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Vidzi_tv.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Vidzi_tv.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Vidzi_tv;
+    }());
+    MovieNightAPI.Vidzi_tv = Vidzi_tv;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
     function resolvers() {
         var resolvers = [
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
@@ -1653,7 +1701,7 @@ var MovieNightAPI;
             new MovieNightAPI.Flashx_tv(), new MovieNightAPI.Vid_ag(),
             new MovieNightAPI.Streamin_to(), new MovieNightAPI.PromptFile_com(),
             new MovieNightAPI.Briskfile_com(), new MovieNightAPI.Vidup_me(),
-            new MovieNightAPI.Vidto_me()
+            new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv()
         ];
         return resolvers;
     }

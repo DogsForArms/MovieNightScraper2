@@ -25,7 +25,7 @@
 ///<reference path="./resolvers/Briskfile_com.ts" />
 ///<reference path="./resolvers/Vidup_me.ts" />
 ///<reference path="./resolvers/Vidto_me.ts" />
-
+///<reference path="./resolvers/Vidzi_tv.ts" />
 
 module MovieNightAPI {
     export function resolvers(): Resolver<string>[] {
@@ -40,7 +40,7 @@ module MovieNightAPI {
             new Flashx_tv(), new Vid_ag(),
             new Streamin_to(), new PromptFile_com(),
             new Briskfile_com(), new Vidup_me(),
-            new Vidto_me()
+            new Vidto_me(), new Vidzi_tv()
             //new Neodrive_co() //forbidden
             //new Lolzor_com()
             //new Vidbull_lol(), new Vidbull_com()

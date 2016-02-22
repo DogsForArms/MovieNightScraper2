@@ -24,6 +24,7 @@
 ///<reference path="./resolvers/Neodrive_co.ts" />
 ///<reference path="./resolvers/Briskfile_com.ts" />
 ///<reference path="./resolvers/Vidup_me.ts" />
+///<reference path="./resolvers/Vidto_me.ts" />
 
 
 module MovieNightAPI {
@@ -38,7 +39,8 @@ module MovieNightAPI {
             new Openload_co(), new Ishared_eu(),
             new Flashx_tv(), new Vid_ag(),
             new Streamin_to(), new PromptFile_com(),
-            new Briskfile_com(), new Vidup_me()
+            new Briskfile_com(), new Vidup_me(),
+            new Vidto_me()
             //new Neodrive_co() //forbidden
             //new Lolzor_com()
             //new Vidbull_lol(), new Vidbull_com()

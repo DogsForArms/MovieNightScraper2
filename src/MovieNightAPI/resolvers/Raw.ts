@@ -52,52 +52,78 @@ module MovieNightAPI {
                             })
                         // console.log(JSON.stringify(urls, null, 4).yellow)
 
-                        var urlsToSuccess: any = {}
-                        var completionCount = 0
-                        var reportResponder = function(url: string, success: boolean) {
-                            urlsToSuccess[url] = success
-                            completionCount++
-                            if (completionCount == urls.length - 1) {
-                                Object.keys(urlsToSuccess).forEach(function(k) {
-                                    console.debug(urlsToSuccess[k] ? k.yellow.inverse : k.yellow)
-                                })
-                            }
-                        }
+                        // var urlsToSuccess: any = {}
+                        // var completionCount = 0
+                        // var reportResponder = function(url: string, success: boolean) {
+                        //     urlsToSuccess[url] = success
+                        //     completionCount++
+                        //     if (completionCount == urls.length - 1) {
+                        //         Object.keys(urlsToSuccess).forEach(function(k) {
+                        //             console.debug(urlsToSuccess[k] ? k.yellow.inverse : k.yellow)
+                        //         })
+                        //     }
+                        // }
 
                         if (urls.length == 0) {
                             var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")
                             process.processOne({ 'type': ResultType.Error, 'error': noResponse })
                         }
                         else {
-                            urls.map(function(url) {
+                            var urlResponderProcess = urls.map(function(url) {
+                                var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(url) })
+
                                 return {
                                     'url': url,
-                                    'process': process.newChildProcess()
+                                    'responder': responders,
+                                    'process': responders.length > 0 ? process.newChildProcess() : null
                                 }
                             })
-                                .forEach(function(pair) {
-                                    ResolverCommon.getMimeType(pair.url, tempMediaOwner, pair.process).then(function(mimeType) {
-                                        if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process)) {
-                                            var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(pair.url) })
-                                            var foundResponders = (responders.length > 0)
-                                            reportResponder(pair.url, foundResponders)
 
-                                            if (!foundResponders) {
-                                                var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")
-                                                pair.process.processOne({ 'type': ResultType.Error, 'error': noResponse })
-                                            }
-                                            else {
-                                                responders
-                                                    .map(function(resolver) {
-                                                        return { 'resolver': resolver, 'process': pair.process.newChildProcess() }
-                                                    })
-                                                    .forEach(function(r) {
-                                                        r.resolver.scrape(pair.url, r.process)
-                                                    })
-                                            }
-                                        }
-                                    })
+                            var logRespondersStr = urlResponderProcess.reduce(function(l, touple) {
+                                return l + (l.length > 0 ? '\n' : '') + (touple.process == null ? touple.url.yellow : touple.url.yellow.inverse)
+                            }, '')
+                            console.debug(logRespondersStr)
+
+                            var recognizedUrls = urlResponderProcess.filter(function(p) { return p.process != null })
+                            if (recognizedUrls.length == 0) {
+                                process.processOne({ 'type': ResultType.Error, 'error': noResponse })
+                            } else {
+                                recognizedUrls.forEach(function(touple) {
+                                    touple.responder[0].scrape(touple.url, touple.process)
                                 })
+                            }
+
+
+
+                            // urls.map(function(url) {
+                            //     return {
+                            //         'url': url,
+                            //         'process': process.newChildProcess()
+                            //     }
+                            // })
+                            //     .forEach(function(pair) {
+                            //         ResolverCommon.getMimeType(pair.url, tempMediaOwner, pair.process).then(function(mimeType) {
+                            //             if (!ifMimeTypeIsValidCreate(pair.url, mimeType, pair.process)) {
+                            //                 var responders = resolvers().filter(function(resolver) { return resolver.recognizesUrlMayContainContent(pair.url) })
+                            //                 var foundResponders = (responders.length > 0)
+                            //                 reportResponder(pair.url, foundResponders)
+                            //
+                            //                 if (!foundResponders) {
+                            //                     var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")
+                            //                     pair.process.processOne({ 'type': ResultType.Error, 'error': noResponse })
+                            //                 }
+                            //                 else {
+                            //                     responders
+                            //                         .map(function(resolver) {
+                            //                             return { 'resolver': resolver, 'process': pair.process.newChildProcess() }
+                            //                         })
+                            //                         .forEach(function(r) {
+                            //                             r.resolver.scrape(pair.url, r.process)
+                            //                         })
+                            //                 }
+                            //             }
+                            //         })
+                            //     })
                         }
 
                     })

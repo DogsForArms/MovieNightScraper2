@@ -32,6 +32,7 @@
     "src/MovieNightAPI/resolvers/Flashx_tv.ts",
     "src/MovieNightAPI/resolvers/Gorillavid_in.ts",
     "src/MovieNightAPI/resolvers/Ishared_eu.ts",
+    "src/MovieNightAPI/resolvers/Letwatch_us.ts",
     "src/MovieNightAPI/resolvers/Lolzor_com.ts",
     "src/MovieNightAPI/resolvers/Mycollection_net.ts",
     "src/MovieNightAPI/resolvers/Neodrive_co.ts",

@@ -442,7 +442,9 @@ var MovieNightAPI;
             return { 'component': component, 'keep': value };
         });
         var done = false;
-        var chopEnd = scoresAndComponents.reduce(function (l, c, i) {
+        var chopEnd = scoresAndComponents
+            .filter(function (s) { return s.component.length > 0; })
+            .reduce(function (l, c, i) {
             if (done || !c.keep) {
                 done = true;
             }
@@ -1172,7 +1174,7 @@ var MovieNightAPI;
             this.mediaIdExtractors = [
                 function (url) { return /openload\.co\/f\/(.+?)\//.execute(url); },
                 function (url) { return /openload\.co\/f\/(.+?)(\.html)?$/.execute(url); },
-                function (url) { return /openload\.co\/embed\/([a-zA-Z\d]*?)(\/|.*?\.html|$)/.execute(url); }
+                function (url) { return /openload\.co\/embed\/(.*?)(\/|.*?\.html|$)/.execute(url); }
             ];
         }
         Openload_co.prototype.resolveId = function (mediaIdentifier, process) {
@@ -1689,6 +1691,53 @@ var MovieNightAPI;
 })(MovieNightAPI || (MovieNightAPI = {}));
 var MovieNightAPI;
 (function (MovieNightAPI) {
+    var Letwatch_us = (function () {
+        function Letwatch_us() {
+            this.domain = 'letwatch.us';
+            this.name = 'LetWatch.us';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /letwatch\.us\/([a-zA-Z\d]+?)(\/)?(\.html)?$/.execute(url); }
+            ];
+        }
+        Letwatch_us.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://letwatch.us/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = /<title>watch\s*?(.*?)<\/title>/i.execute(html);
+                try {
+                    var ugly = /<script.*?>(eval\([\s\S]*?)<\/script>/.execute(html);
+                    var beautiful = MovieNightAPI.ResolverCommon.beautify(ugly);
+                    var sourcesStr = /sources\s*?:\s*?\[([\s\S]+?)\]/.execute(beautiful);
+                    content.streams = /(\{[\s\S]*?\})/g.executeAll(sourcesStr).map(function (sourceStr) {
+                        var stream = new MovieNightAPI.UrlStream(/file\s*:\s*["'](.*?)['"]/.execute(sourceStr));
+                        stream.name = /label\s*:\s*["'](.*?)['"]/.execute(sourceStr);
+                        stream.mimeType = "video/x-flv";
+                        return stream;
+                    });
+                    content.snapshotImageUrl = /image\s*:\s*["'](.*?)['"]/.execute(beautiful);
+                    var durationStr = /duration\s*:\s*["'](.*?)['"]/.execute(beautiful);
+                    content.duration = durationStr ? +durationStr : null;
+                }
+                catch (e) {
+                    logError(e);
+                }
+                MovieNightAPI.finishedWithContent(content, self, process);
+            });
+        };
+        Letwatch_us.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Letwatch_us.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Letwatch_us;
+    }());
+    MovieNightAPI.Letwatch_us = Letwatch_us;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
     function resolvers() {
         var resolvers = [
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
@@ -1701,7 +1750,8 @@ var MovieNightAPI;
             new MovieNightAPI.Flashx_tv(), new MovieNightAPI.Vid_ag(),
             new MovieNightAPI.Streamin_to(), new MovieNightAPI.PromptFile_com(),
             new MovieNightAPI.Briskfile_com(), new MovieNightAPI.Vidup_me(),
-            new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv()
+            new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv(),
+            new MovieNightAPI.Letwatch_us()
         ];
         return resolvers;
     }

@@ -73,15 +73,17 @@ module MovieNightAPI {
         // console.log(coloredComponentsString)
 
         var done = false
-        var chopEnd = scoresAndComponents.reduce(function(l, c, i) {
+        var chopEnd = scoresAndComponents
+            .filter(function(s) { return s.component.length > 0 })
+            .reduce(function(l, c, i) {
 
-            if (done || !c.keep) {
-                done = true
-            } else {
-                l.push(c)
-            }
-            return l
-        }, []).map(function(obj) { return obj.component })
+                if (done || !c.keep) {
+                    done = true
+                } else {
+                    l.push(c)
+                }
+                return l
+            }, []).map(function(obj) { return obj.component })
         var newValue = chopEnd.join(' ')
 
         var oldValue = components.filter(function(phrase) {

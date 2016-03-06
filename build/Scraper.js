@@ -1906,7 +1906,6 @@ var MovieNightAPI;
                     content.snapshotImageUrl = self.sanitize(/"poster_url"\s*:\s*"(.*?)"/.execute(setupStr));
                     var durationStr = /"duration"\s*:\s*.*?([0-9]*)/.execute(setupStr);
                     content.duration = durationStr ? +durationStr : null;
-                    console.log(setupStr.magenta);
                     var regionOfInterest = /["']qualities['"]\s*:\s*{([\s\S]*?)},/i.execute(setupStr);
                     content.streams = /"([a-zA-Z\d]*?)".*?\{([\s\S]*?)\}/g.execAll(regionOfInterest)
                         .reduce(function (l, res) {
@@ -1926,7 +1925,7 @@ var MovieNightAPI;
                 catch (e) {
                     logError(e);
                 }
-                console.log(JSON.stringify(content, null, 4).red);
+                MovieNightAPI.finishedWithContent(content, self, process);
             });
         };
         Dailymotion_com.prototype.recognizesUrlMayContainContent = function (url) {

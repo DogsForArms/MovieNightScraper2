@@ -27,7 +27,6 @@ module MovieNightAPI {
                     var durationStr = /"duration"\s*:\s*.*?([0-9]*)/.execute(setupStr)
                     content.duration = durationStr ? +durationStr : null;
 
-                    console.log(setupStr.magenta)
                     var regionOfInterest = /["']qualities['"]\s*:\s*{([\s\S]*?)},/i.execute(setupStr)
                     content.streams = /"([a-zA-Z\d]*?)".*?\{([\s\S]*?)\}/g.execAll(regionOfInterest)
                         .reduce(function(l, res) {
@@ -46,7 +45,8 @@ module MovieNightAPI {
                         }, [])
                     // console.log(setupStr.blue)
                 } catch (e) { logError(e) }
-                console.log(JSON.stringify(content, null, 4).red)
+                // console.log(JSON.stringify(content, null, 4).red)
+                finishedWithContent(content, self, process)
             })
 
         }

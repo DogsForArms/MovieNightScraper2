@@ -1852,7 +1852,7 @@ var MovieNightAPI;
             ];
         }
         Watchseries_li.prototype.resolveId = function (mediaIdentifier, process) {
-            var self = this;
+            console.log("never call resolveId of watchseries_li");
         };
         Watchseries_li.prototype.recognizesUrlMayContainContent = function (url) {
             return MovieNightAPI.extractMediaId(this, url) != null;
@@ -1870,6 +1870,7 @@ var MovieNightAPI;
                     };
                 });
                 linksPairs.forEach(function (pair) {
+                    console.debug(pair.url.magenta);
                     (new MovieNightAPI.Raw()).scrapeForUrls(pair.url, pair.process, function (someUrl) {
                         return !self.recognizesUrlMayContainContent(someUrl);
                     });
@@ -1879,6 +1880,64 @@ var MovieNightAPI;
         return Watchseries_li;
     }());
     MovieNightAPI.Watchseries_li = Watchseries_li;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Dailymotion_com = (function () {
+        function Dailymotion_com() {
+            this.domain = 'dailymotion.com';
+            this.name = 'DailyMotion';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /dailymotion\.com\/video\/(.*?)$/.execute(url); }
+            ];
+        }
+        Dailymotion_com.prototype.sanitize = function (inputUrl) {
+            return inputUrl ? inputUrl.replace(/\\/g, '') : null;
+        };
+        Dailymotion_com.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://www.dailymotion.com/video/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                try {
+                    var setupStr = /buildPlayer\(([\s\S]*?)\);/.execute(html);
+                    content.title = /"title"\s*:\s*"(.*?)"/.execute(setupStr);
+                    content.snapshotImageUrl = self.sanitize(/"poster_url"\s*:\s*"(.*?)"/.execute(setupStr));
+                    var durationStr = /"duration"\s*:\s*.*?([0-9]*)/.execute(setupStr);
+                    content.duration = durationStr ? +durationStr : null;
+                    console.log(setupStr.magenta);
+                    var regionOfInterest = /["']qualities['"]\s*:\s*{([\s\S]*?)},/i.execute(setupStr);
+                    content.streams = /"([a-zA-Z\d]*?)".*?\{([\s\S]*?)\}/g.execAll(regionOfInterest)
+                        .reduce(function (l, res) {
+                        var name = res[1];
+                        var c = res[2];
+                        var type = /"type"\s*:\s*"(.*?)"/.execute(c);
+                        var url = /"url"\s*:\s*"(.*?)"/.execute(c);
+                        if (type == "video\\/mp4") {
+                            var stream = new MovieNightAPI.UrlStream(self.sanitize(url));
+                            stream.mimeType = "video/mp4";
+                            stream.name = name;
+                            l.push(stream);
+                        }
+                        return l;
+                    }, []);
+                }
+                catch (e) {
+                    logError(e);
+                }
+                console.log(JSON.stringify(content, null, 4).red);
+            });
+        };
+        Dailymotion_com.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Dailymotion_com.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Dailymotion_com;
+    }());
+    MovieNightAPI.Dailymotion_com = Dailymotion_com;
 })(MovieNightAPI || (MovieNightAPI = {}));
 var MovieNightAPI;
 (function (MovieNightAPI) {
@@ -1896,7 +1955,7 @@ var MovieNightAPI;
             new MovieNightAPI.Briskfile_com(), new MovieNightAPI.Vidup_me(),
             new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv(),
             new MovieNightAPI.Letwatch_us(), new MovieNightAPI.Streamplay_to(),
-            new MovieNightAPI.Watchseries_li()
+            new MovieNightAPI.Watchseries_li(), new MovieNightAPI.Dailymotion_com()
         ];
         return resolvers;
     }

@@ -10,8 +10,7 @@ module MovieNightAPI {
         ]
 
         resolveId(mediaIdentifier: string, process: ProcessNode) {
-            var self = this
-            //TODO
+            console.log("never call resolveId of watchseries_li")
         }
 
         recognizesUrlMayContainContent(url: string): boolean {
@@ -30,7 +29,9 @@ module MovieNightAPI {
                             process: process.newChildProcess()
                         }
                     })
+
                 linksPairs.forEach(function(pair) {
+                    console.debug(pair.url.magenta);
                     (new Raw()).scrapeForUrls(pair.url, pair.process,
                         function(someUrl: string): boolean {
                             return !self.recognizesUrlMayContainContent(someUrl)

@@ -29,6 +29,16 @@ module MovieNightAPI {
         }
         export function request(options: any, mediaOwnerInfo: MediaOwnerInfo, process: ProcessNode, getAll?: boolean): Promise<string> {
 
+            // console.log(JSON.stringify(options, null, 4).inverse)
+            // if (options.formData && options.formData.Cookie) {
+            //     var Cookies = options.formData.Cookie
+            //     var jar = Request.jar()
+            //     var cookie = Request.cookie(Cookies);
+            //     jar.setCookie(cookie, options.url)
+            //     options.jar = jar
+            //     console.log("I SET A COOKIE")
+            // }
+
             var q = new Promise<string>(function(resolve, reject) {
                 var self = this
 

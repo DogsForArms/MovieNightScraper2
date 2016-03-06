@@ -28,6 +28,24 @@ RegExp.curryExecute = function (str) {
         return reg.execute(str);
     };
 };
+RegExp.allUrls = function (html, excluding) {
+    var alreadyUsedUrls = (excluding || []).reduce(function (l, c) {
+        l[c] = true;
+        return l;
+    }, {});
+    var urls1 = /((http|https):\/\/.*?)["';$]/g.executeAll(html);
+    var urls2 = /((http|https):\\\/\\\/.*?)["';$]/g.executeAll(html).map(function (url) {
+        var r = url.replace(/\\/g, '');
+        return r;
+    });
+    return urls1.concat(urls2).filter(function (url) {
+        if (!alreadyUsedUrls[url]) {
+            alreadyUsedUrls[url] = true;
+            return true;
+        }
+        return false;
+    });
+};
 var MovieNightAPI;
 (function (MovieNightAPI) {
     var Vodlocker_com = (function () {
@@ -311,6 +329,9 @@ var MovieNightAPI;
             return true;
         };
         Raw.prototype.scrape = function (url, process) {
+            this.scrapeForUrls(url, process);
+        };
+        Raw.prototype.scrapeForUrls = function (url, process, ignore) {
             var tempMediaOwner = {
                 domain: 'movienight.it',
                 name: 'MovieNight Scraper',
@@ -331,21 +352,10 @@ var MovieNightAPI;
                 };
                 if (isText) {
                     MovieNightAPI.ResolverCommon.get(url, tempMediaOwner, process).then(function (html) {
-                        var alreadyUsedUrls = {};
-                        alreadyUsedUrls[url] = true;
-                        var urls1 = /((http|https):\/\/.*?)["';$]/g.executeAll(html);
-                        var urls2 = /((http|https):\\\/\\\/.*?)["';$]/g.executeAll(html).map(function (url) {
-                            var r = url.replace(/\\/g, '');
-                            return r;
-                        });
-                        var urls = urls1.concat(urls2)
-                            .filter(function (url) {
-                            if (!alreadyUsedUrls[url]) {
-                                alreadyUsedUrls[url] = true;
-                                return true;
-                            }
-                            return false;
-                        });
+                        var urls = RegExp.allUrls(html, [url]);
+                        if (ignore) {
+                            urls = urls.filter(ignore);
+                        }
                         if (urls.length == 0) {
                             var noResponse = new MovieNightAPI.ResolverError(MovieNightAPI.ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.");
                             process.processOne({ 'type': MovieNightAPI.ResultType.Error, 'error': noResponse });
@@ -1738,6 +1748,140 @@ var MovieNightAPI;
 })(MovieNightAPI || (MovieNightAPI = {}));
 var MovieNightAPI;
 (function (MovieNightAPI) {
+    var Streamplay_to = (function () {
+        function Streamplay_to() {
+            this.domain = 'streamplay.to';
+            this.name = 'StreamPlay.to';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /streamplay\.to\/([a-zA-Z\d]*?)(\/|\.html|$)/.execute(url); }
+            ];
+        }
+        Streamplay_to.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://streamplay.to/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html0) {
+                var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                content.title = postParams.fname;
+                setTimeout(function () {
+                    MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
+                        try {
+                            var ugly = /<script.*?(eval\([\s\S]*?)<\/script>/.execute(html);
+                            var beautiful = MovieNightAPI.ResolverCommon.beautify(ugly);
+                            var sourcesStr = /sources\s*:\s*\[([\s\S]*?)\]/.execute(beautiful);
+                            content.streams = /\{([\s\S]*?)\}/g.executeAll(sourcesStr).map(function (sourceStr) {
+                                var file = /file\s*:\s*["'](.*?)['"]/.execute(sourceStr);
+                                if (/(rtmp:\/\/)/.execute(file)) {
+                                    var result = /(.*?mp4):(.*)/.exec(file);
+                                    return result ? new MovieNightAPI.RtmpStream(result[1], result[2]) : null;
+                                }
+                                else {
+                                    var stream = new MovieNightAPI.UrlStream(file);
+                                    stream.mimeType = "application/octet-stream";
+                                    return stream;
+                                }
+                            });
+                        }
+                        catch (e) {
+                            logError(e);
+                        }
+                        MovieNightAPI.finishedWithContent(content, self, process);
+                    });
+                }, 8 * 1000);
+            });
+        };
+        Streamplay_to.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Streamplay_to.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Streamplay_to;
+    }());
+    MovieNightAPI.Streamplay_to = Streamplay_to;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Nowvideo_sx = (function () {
+        function Nowvideo_sx() {
+            this.domain = 'nowvideo.sx';
+            this.name = 'NowVideo.sx';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /nowvideo\.sx\/video\/([a-zA-Z\d]*?)(\/|\.html|$)/.execute(url); }
+            ];
+        }
+        Nowvideo_sx.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('http://nowvideo.sx/video/' + mediaIdentifier);
+            MovieNightAPI.ResolverCommon.getAll(url, self, process).then(function (response) {
+                var html0 = response.body;
+                var setCookies = response.headers['set-cookie'];
+                var cookiesStr = setCookies.reduce(function (l, c) {
+                    return l + ((l.length > 0) ? '; ' : '') + /(.*?);/.execute(c);
+                }, '');
+                var postParams = MovieNightAPI.getHiddenPostParams(html0);
+                postParams['Cookie'] = cookiesStr;
+                postParams['submit'] = 'submit';
+                console.log(JSON.stringify(postParams, null, 4).red);
+                MovieNightAPI.ResolverCommon.formPost(url, postParams, self, process).then(function (html) {
+                    console.log(html.length);
+                });
+            });
+        };
+        Nowvideo_sx.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Nowvideo_sx.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Nowvideo_sx;
+    }());
+    MovieNightAPI.Nowvideo_sx = Nowvideo_sx;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Watchseries_li = (function () {
+        function Watchseries_li() {
+            this.domain = 'watchseries.li';
+            this.name = 'WatchSeries';
+            this.needsClientRefetch = true;
+            this.mediaIdExtractors = [
+                function (url) { return /(watchseries\.li)/.execute(url); }
+            ];
+        }
+        Watchseries_li.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+        };
+        Watchseries_li.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Watchseries_li.prototype.scrape = function (url, process) {
+            var self = this;
+            MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
+                var bottomHtml = html.split("<div id=\"linktable\">")[1];
+                var linksPairs = /<td>\s*<a\s(href=|-=)["'](\/.*?)["']/g.execAll(bottomHtml)
+                    .map(function (result) {
+                    var partialUrl = result[2];
+                    return {
+                        url: ('http://www.watchseries.li' + partialUrl),
+                        process: process.newChildProcess()
+                    };
+                });
+                linksPairs.forEach(function (pair) {
+                    (new MovieNightAPI.Raw()).scrapeForUrls(pair.url, pair.process, function (someUrl) {
+                        return !self.recognizesUrlMayContainContent(someUrl);
+                    });
+                });
+            });
+        };
+        return Watchseries_li;
+    }());
+    MovieNightAPI.Watchseries_li = Watchseries_li;
+})(MovieNightAPI || (MovieNightAPI = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
     function resolvers() {
         var resolvers = [
             new MovieNightAPI.Vodlocker_com(), new MovieNightAPI.Allmyvideos_net(),
@@ -1751,11 +1895,28 @@ var MovieNightAPI;
             new MovieNightAPI.Streamin_to(), new MovieNightAPI.PromptFile_com(),
             new MovieNightAPI.Briskfile_com(), new MovieNightAPI.Vidup_me(),
             new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv(),
-            new MovieNightAPI.Letwatch_us()
+            new MovieNightAPI.Letwatch_us(), new MovieNightAPI.Streamplay_to(),
+            new MovieNightAPI.Watchseries_li()
         ];
         return resolvers;
     }
     MovieNightAPI.resolvers = resolvers;
+    function pairResolversWithUrls(resolvers, urls, process) {
+        return urls.reduce(function (l, url) {
+            var reses = resolvers.filter(function (res) {
+                return res.recognizesUrlMayContainContent(url);
+            });
+            if (reses.length > 0) {
+                l.push({
+                    resolvers: reses,
+                    url: url,
+                    process: process.newChildProcess()
+                });
+            }
+            return l;
+        }, []);
+    }
+    MovieNightAPI.pairResolversWithUrls = pairResolversWithUrls;
     function scrape(url, process) {
         var responders = resolvers().filter(function (resolver) { return resolver.recognizesUrlMayContainContent(url); });
         if (responders.length == 0) {

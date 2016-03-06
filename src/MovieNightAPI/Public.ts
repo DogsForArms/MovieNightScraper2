@@ -27,6 +27,9 @@
 ///<reference path="./resolvers/Vidto_me.ts" />
 ///<reference path="./resolvers/Vidzi_tv.ts" />
 ///<reference path="./resolvers/Letwatch_us.ts" />
+///<reference path="./resolvers/Streamplay_to.ts" />
+///<reference path="./resolvers/Nowvideo_sx.ts" />
+/// <reference path="./resolvers/Watchseries_li.ts"/>
 
 module MovieNightAPI {
     export function resolvers(): Resolver<string>[] {
@@ -42,12 +45,36 @@ module MovieNightAPI {
             new Streamin_to(), new PromptFile_com(),
             new Briskfile_com(), new Vidup_me(),
             new Vidto_me(), new Vidzi_tv(),
-            new Letwatch_us()
-            //new Neodrive_co() //forbidden
+            new Letwatch_us(), new Streamplay_to(),
+            new Watchseries_li()
+            // new Nowvideo_sx() //seemed to work in postman, but here it does not work, cookie?
+            // new Neodrive_co() //forbidden -- parses url but playing does not work in url
             //new Lolzor_com()
             //new Vidbull_lol(), new Vidbull_com()
         ]
         return resolvers
+    }
+
+    export interface ScrapePair<T> {
+        resolvers: Resolver<T>[],
+        url: string,
+        process: ProcessNode
+    }
+
+    export function pairResolversWithUrls(resolvers: Resolver<any>[], urls: string[], process: ProcessNode): ScrapePair<any>[] {
+        return urls.reduce(function(l, url) {
+            var reses = resolvers.filter(function(res) {
+                return res.recognizesUrlMayContainContent(url)
+            })
+            if (reses.length > 0) {
+                l.push({
+                    resolvers: reses,
+                    url: url,
+                    process: process.newChildProcess()
+                })
+            }
+            return l
+        }, [])
     }
 
     export function scrape(url: string, process: ProcessNode) {

@@ -7,7 +7,13 @@ module MovieNightAPI {
         recognizesUrlMayContainContent(url: string): boolean {
             return true
         }
+
         scrape(url: string, process: ProcessNode): void {
+            this.scrapeForUrls(url, process)
+        }
+
+        scrapeForUrls(url: string, process: ProcessNode, ignore?: (url: string) => boolean): void {
+
             var tempMediaOwner: MediaOwnerInfo = {
                 domain: 'movienight.it',
                 name: 'MovieNight Scraper',
@@ -34,35 +40,27 @@ module MovieNightAPI {
                 if (isText) {
                     //parse for all urls
                     ResolverCommon.get(url, tempMediaOwner, process).then(function(html) {
-                        var alreadyUsedUrls: any = {}
-                        alreadyUsedUrls[url] = true
+                        // var alreadyUsedUrls: any = {}
+                        // alreadyUsedUrls[url] = true
 
-                        var urls1 = /((http|https):\/\/.*?)["';$]/g.executeAll(html)
-                        var urls2 = /((http|https):\\\/\\\/.*?)["';$]/g.executeAll(html).map(function(url) {
-                            var r = url.replace(/\\/g, '')
-                            return r
-                        })
-                        var urls = urls1.concat(urls2)
-                            .filter(function(url) {
-                                if (!alreadyUsedUrls[url]) {
-                                    alreadyUsedUrls[url] = true
-                                    return true
-                                }
-                                return false
-                            })
-                        // console.log(JSON.stringify(urls, null, 4).yellow)
-
-                        // var urlsToSuccess: any = {}
-                        // var completionCount = 0
-                        // var reportResponder = function(url: string, success: boolean) {
-                        //     urlsToSuccess[url] = success
-                        //     completionCount++
-                        //     if (completionCount == urls.length - 1) {
-                        //         Object.keys(urlsToSuccess).forEach(function(k) {
-                        //             console.debug(urlsToSuccess[k] ? k.yellow.inverse : k.yellow)
-                        //         })
+                        var urls = RegExp.allUrls(html, [url])
+                        if (ignore) {
+                            urls = urls.filter(ignore)
+                        }
+                        // var urls1 = /((http|https):\/\/.*?)["';$]/g.executeAll(html)
+                        // var urls2 = /((http|https):\\\/\\\/.*?)["';$]/g.executeAll(html).map(function(url) {
+                        //     var r = url.replace(/\\/g, '')
+                        //     return r
+                        // })
+                        // var urls = urls1.concat(urls2)
+                        // .filter(function(url) {
+                        //     if (!alreadyUsedUrls[url]) {
+                        //         alreadyUsedUrls[url] = true
+                        //         return true
                         //     }
-                        // }
+                        //     return false
+                        // })
+                        // console.log(JSON.stringify(urls, null, 4).yellow)
 
                         if (urls.length == 0) {
                             var noResponse = new ResolverError(ResolverErrorCode.NoResponders, "Sorry, we do not know what to do with this url.")

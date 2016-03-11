@@ -31,6 +31,7 @@
 ///<reference path="./resolvers/Nowvideo_sx.ts" />
 /// <reference path="./resolvers/Watchseries_li.ts"/>
 /// <reference path="./resolvers/Dailymotion_com.ts"/>
+/// <reference path="./resolvers/Twitch_tv.ts"/>
 
 module MovieNightAPI {
     export function resolvers(): Resolver<string>[] {
@@ -47,7 +48,8 @@ module MovieNightAPI {
             new Briskfile_com(), new Vidup_me(),
             new Vidto_me(), new Vidzi_tv(),
             new Letwatch_us(), new Streamplay_to(),
-            new Watchseries_li(), new Dailymotion_com()
+            new Watchseries_li(), new Dailymotion_com(),
+            new Twitch_tv()
             // new Nowvideo_sx() //seemed to work in postman, but here it does not work, cookie?
             // new Neodrive_co() //forbidden -- parses url but playing does not work in url
             //new Lolzor_com()

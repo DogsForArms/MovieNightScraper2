@@ -441,7 +441,7 @@ var MovieNightAPI;
         'alE13', 'WEBRip', 'MP3', 'mp3', 'DD5', 'MkvCage', 'MrSeeN',
         'SiMPLE', 'TiTAN', 'aXXo', '480p', 'VDC', 'HDRiP', 'DAiLYHOMAGE',
         'MiTED', 'xvid', 'webrip', 'XVID', '1080p', 'DD5', 'TSV',
-        'iNTERNAL', 'BDRip'];
+        'iNTERNAL', 'BDRip', 'bdrip', 'Iwatchonline'];
     function niceFilter(rawTitle) {
         if (!rawTitle) {
             return null;
@@ -628,14 +628,11 @@ var MovieNightAPI;
                 var url = /player_wrap[\s\S]*?src\s*?=["']([\s\S]*?)["']/.execute(html0);
                 url = url.replace('\n', '');
                 MovieNightAPI.ResolverCommon.get(url, self, process).then(function (html) {
-                    console.log(html.blue);
                     var fn = RegExp.curryExecute(html);
                     content.snapshotImageUrl = fn(/playlist:[\s\S]*?image:.*?["'](.*)["']/);
                     content.streams = [new MovieNightAPI.UrlStream(fn(/playlist:[\s\S]*?file:.*?["'](.*)["']/))];
                     var durationStr = fn(/duration:.*?["'](\d+)?["']/);
                     content.duration = durationStr ? +durationStr : null;
-                    console.log(url);
-                    console.log(JSON.stringify(content, null, 4).magenta);
                     MovieNightAPI.finishedWithContent(content, self, process);
                 });
             });
@@ -1938,6 +1935,100 @@ var MovieNightAPI;
     }());
     MovieNightAPI.Dailymotion_com = Dailymotion_com;
 })(MovieNightAPI || (MovieNightAPI = {}));
+var ApiKeyLoader;
+(function (ApiKeyLoader) {
+    var data;
+    var apiKeysDir = require('path').dirname(require.main.filename) + '/API_KEYS.json';
+    function testValidity(data, apiKeyName) {
+        if (!data[apiKeyName]) {
+            throw new Error("No apiKey found for " + apiKeyName + ". Make sure to put a API_KEYS.json in the your app's main module -- " + apiKeysDir);
+        }
+    }
+    function setApiKeyPath(path) {
+        apiKeysDir = (path + '/API_KEYS.json').replace(/\/\//, '/');
+    }
+    ApiKeyLoader.setApiKeyPath = setApiKeyPath;
+    function service(apiKeyName, resolve, reject) {
+        if (!data) {
+            require('fs').readFile(apiKeysDir, 'utf8', function (error, strData) {
+                if (error && reject) {
+                    reject(error);
+                }
+                try {
+                    data = JSON.parse(strData);
+                    testValidity(data, apiKeyName);
+                    resolve(data[apiKeyName]);
+                }
+                catch (e) {
+                    testValidity({}, apiKeyName);
+                }
+            });
+        }
+        else {
+            testValidity(data, apiKeyName);
+            resolve(data[apiKeyName]);
+        }
+    }
+    ApiKeyLoader.service = service;
+})(ApiKeyLoader || (ApiKeyLoader = {}));
+var MovieNightAPI;
+(function (MovieNightAPI) {
+    var Twitch_tv = (function () {
+        function Twitch_tv() {
+            this.domain = 'twitch.tv';
+            this.name = 'Twitch';
+            this.needsClientRefetch = false;
+            this.mediaIdExtractors = [
+                function (url) { return /twitch\.tv\/([^\/]*)/.execute(url); }
+            ];
+        }
+        Twitch_tv.prototype.resolveId = function (mediaIdentifier, process) {
+            var self = this;
+            var url = ('https://api.twitch.tv/kraken/streams/' + mediaIdentifier);
+            ApiKeyLoader.service('TWITCH', function (secret) {
+                var opts = {
+                    method: 'GET',
+                    url: url,
+                    headers: { 'Client-ID': secret }
+                };
+                MovieNightAPI.ResolverCommon.request(opts, self, process).then(function (channelData) {
+                    var content = new MovieNightAPI.Content(self, mediaIdentifier);
+                    try {
+                        var data = JSON.parse(channelData);
+                        if (data.error) {
+                        }
+                        else {
+                            var preview = (data && data.stream && data.stream.preview) ? data.stream.preview : null;
+                            var name = (data && data.stream && data.stream.channel && data.stream.channel.display_name) ? data.stream.channel.display_name : null;
+                            var title = (data && data.stream && data.stream.channel && data.stream.channel.status) ? data.stream.channel.status : null;
+                            name = name ? name : mediaIdentifier;
+                            title = title ? title : ((name ? name : 'unknown') + ' - untitled');
+                            var mediumUrl = preview.medium;
+                            var streamUrl = 'http://twitch.tv/' + mediaIdentifier;
+                            content.title = title;
+                            content.snapshotImageUrl = mediumUrl;
+                            var stream = new MovieNightAPI.UrlStream(streamUrl);
+                            stream.mimeType = 'video/twitch';
+                            content.streams = [stream];
+                        }
+                    }
+                    catch (e) {
+                        logError(e);
+                    }
+                    MovieNightAPI.finishedWithContent(content, self, process);
+                });
+            });
+        };
+        Twitch_tv.prototype.recognizesUrlMayContainContent = function (url) {
+            return MovieNightAPI.extractMediaId(this, url) != null;
+        };
+        Twitch_tv.prototype.scrape = function (url, process) {
+            MovieNightAPI.extractMediaId(this, url, process);
+        };
+        return Twitch_tv;
+    }());
+    MovieNightAPI.Twitch_tv = Twitch_tv;
+})(MovieNightAPI || (MovieNightAPI = {}));
 var MovieNightAPI;
 (function (MovieNightAPI) {
     function resolvers() {
@@ -1954,7 +2045,8 @@ var MovieNightAPI;
             new MovieNightAPI.Briskfile_com(), new MovieNightAPI.Vidup_me(),
             new MovieNightAPI.Vidto_me(), new MovieNightAPI.Vidzi_tv(),
             new MovieNightAPI.Letwatch_us(), new MovieNightAPI.Streamplay_to(),
-            new MovieNightAPI.Watchseries_li(), new MovieNightAPI.Dailymotion_com()
+            new MovieNightAPI.Watchseries_li(), new MovieNightAPI.Dailymotion_com(),
+            new MovieNightAPI.Twitch_tv()
         ];
         return resolvers;
     }

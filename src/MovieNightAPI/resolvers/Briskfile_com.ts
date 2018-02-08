@@ -1,44 +1,47 @@
-module MovieNightAPI {
-    export class Briskfile_com implements Resolver<string>
-    {
-        domain = 'briskfile.com'
-        name = 'Briskfile'
-        needsClientRefetch = true
+import {Resolver} from '../Resolver'
+import {ProcessNode} from '../ProcessNode'
+import {ResolverCommon, getHiddenPostParams, extractMediaId} from '../ResolverCommon'
+import {finishedWithContent, UrlStream, Content} from '../Content'
 
-        //http://www.briskfile.com/l/5224E0C900-3AFE897DB1
-        mediaIdExtractors: ((url: string) => (string))[] = [
-            function(url) { return /briskfile\.com\/l\/(.*?)(\/)?(\.html)?$/.execute(url) }
-        ]
+export class Briskfile_com implements Resolver<string>
+{
+    domain = 'briskfile.com'
+    name = 'Briskfile'
+    needsClientRefetch = true
 
-        resolveId(mediaIdentifier: string, process: ProcessNode) {
-            var self = this
-            var url = ('http://www.briskfile.com/l/' + mediaIdentifier)
-            ResolverCommon.get(url, self, process).then(function(html0) {
+    //http://www.briskfile.com/l/5224E0C900-3AFE897DB1
+    mediaIdExtractors: ((url: string) => (string))[] = [
+        function(url) { return /briskfile\.com\/l\/(.*?)(\/)?(\.html)?$/.execute(url) }
+    ]
 
-                var postParams = getHiddenPostParams(html0)
-                ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
+    resolveId(mediaIdentifier: string, process: ProcessNode) {
+        var self = this
+        var url = ('http://www.briskfile.com/l/' + mediaIdentifier)
+        ResolverCommon.get(url, self, process).then(function(html0) {
 
-                    var fn = RegExp.curryExecute(html)
-                    var content = new Content(self, mediaIdentifier)
+            var postParams = getHiddenPostParams(html0)
+            ResolverCommon.formPost(url, postParams, self, process).then(function(html) {
 
-                    var urlStream = new UrlStream(fn(/url\s*:\s*["'](.*?)['"]/))
-                    urlStream.mimeType = 'video/x-flv'
-                    content.streams = [urlStream]
+                var fn = RegExp.curryExecute(html)
+                var content = new Content(self, mediaIdentifier)
 
-                    content.title = fn(/title\s*=\s*["'](.*?)['"]/)
-                    content.snapshotImageUrl = fn(/<img src=["'](http:\/\/static\.*?)['"]/)
+                var urlStream = new UrlStream(fn(/url\s*:\s*["'](.*?)['"]/))
+                urlStream.mimeType = 'video/x-flv'
+                content.streams = [urlStream]
 
-                    finishedWithContent(content, self, process)
-                })
+                content.title = fn(/title\s*=\s*["'](.*?)['"]/)
+                content.snapshotImageUrl = fn(/<img src=["'](http:\/\/static\.*?)['"]/)
+
+                finishedWithContent(content, self, process)
             })
-        }
+        })
+    }
 
-        recognizesUrlMayContainContent(url: string): boolean {
-            return extractMediaId(this, url) != null
-        }
+    recognizesUrlMayContainContent(url: string): boolean {
+        return extractMediaId(this, url) != null
+    }
 
-        scrape(url: string, process: ProcessNode) {
-            extractMediaId(this, url, process)
-        }
+    scrape(url: string, process: ProcessNode) {
+        extractMediaId(this, url, process)
     }
 }

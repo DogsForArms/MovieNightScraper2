@@ -1,6 +1,6 @@
 
 module ApiKeyLoader {
-    var data
+    var data: any
     var apiKeysDir = require('path').dirname(require.main.filename) + '/API_KEYS.json';
 
     function testValidity(data: any, apiKeyName: string) {

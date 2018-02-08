@@ -1,44 +1,49 @@
-module MovieNightAPI {
-    export class Watchseries_li implements Resolver<string>
-    {
-        domain = 'watchseries.li'
-        name = 'WatchSeries'
-        needsClientRefetch = true
+import {Resolver} from '../Resolver'
+import {ProcessNode} from '../ProcessNode'
+import {ResolverCommon, extractMediaId} from '../ResolverCommon'
+import {Content, finishedWithContent,} from '../Content'
+import {Raw} from './Raw'
 
-        mediaIdExtractors: ((url: string) => (string))[] = [
-            function(url) { return /(watchseries\.li)/.execute(url) }
-        ]
+export class Watchseries_li implements Resolver<string>
+{
+    domain = 'watchseries.li'
+    name = 'WatchSeries'
+    needsClientRefetch = true
 
-        resolveId(mediaIdentifier: string, process: ProcessNode) {
-            console.log("never call resolveId of watchseries_li")
-        }
+    mediaIdExtractors: ((url: string) => (string))[] = [
+        function(url) { return /(watchseries\.li)/.execute(url) }
+    ]
 
-        recognizesUrlMayContainContent(url: string): boolean {
-            return extractMediaId(this, url) != null
-        }
+    resolveId(mediaIdentifier: string, process: ProcessNode) {
+        console.log("never call resolveId of watchseries_li")
+    }
 
-        scrape(url: string, process: ProcessNode) {
-            var self = this
-            ResolverCommon.get(url, self, process).then(function(html) {
-                var bottomHtml = html.split("<div id=\"linktable\">")[1]
-                var linksPairs = /<td>\s*<a\s(href=|-=)["'](\/.*?)["']/g.execAll(bottomHtml)
-                    .map(function(result) {
-                        var partialUrl = result[2]
-                        return {
-                            url: ('http://www.watchseries.li' + partialUrl),
-                            process: process.newChildProcess()
-                        }
-                    })
+    recognizesUrlMayContainContent(url: string): boolean {
+        return extractMediaId(this, url) != null
+    }
 
-                linksPairs.forEach(function(pair) {
-                    console.debug(pair.url.magenta);
-                    (new Raw()).scrapeForUrls(pair.url, pair.process,
-                        function(someUrl: string): boolean {
-                            return !self.recognizesUrlMayContainContent(someUrl)
-                        })
+    scrape(url: string, process: ProcessNode) {
+        var self = this
+        ResolverCommon.get(url, self, process).then(function(html) {
+            var bottomHtml = html.split("<div id=\"linktable\">")[1]
+            var linksPairs = /<td>\s*<a\s(href=|-=)["'](\/.*?)["']/g.execAll(bottomHtml)
+                .map(function(result) {
+                    var partialUrl = result[2]
+                    return {
+                        url: ('http://www.watchseries.li' + partialUrl),
+                        process: process.newChildProcess()
+                    }
                 })
 
+            linksPairs.forEach(function(pair) {
+                console.debug(pair.url.magenta);
+                (new Raw()).scrapeForUrls(pair.url, pair.process,
+                    function(someUrl: string): boolean {
+                        return !self.recognizesUrlMayContainContent(someUrl)
+                    })
             })
-        }
+
+        })
     }
 }
+

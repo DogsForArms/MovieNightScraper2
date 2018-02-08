@@ -1,5 +1,5 @@
-// Type definitions for colors 2.1.3
-// Package: https://www.npmjs.com/package/command-line-args
+// Type definitions for colors 1.1.2
+// Package: https://www.npmjs.com/package/colors
 // Definitions by: Ethan Sherr <https://github.com/DogsForArms/>
 
 /*
@@ -25,26 +25,43 @@ OTHER DEALINGS IN THE SOFTWARE.
 */
 
 
-interface CommandLineConfig 
-{
-	name: string,
-	alias?: string,
-	type?: any,
-	multiple?: boolean,
-	defaultOption?: boolean,
-	description?: string
+interface String {
+    //colors
+    black: string
+    red: string
+    green: string
+    yellow: string
+    blue: string
+    magenta: string
+    cyan: string
+    white: string
+    gray: string
+    grey: string
+
+    //bg
+    bgBlack: string
+    bgRed: string
+    bgGreen: string
+    bgYellow: string
+    bgBlue: string
+    bgMagenta: string
+    bgCyan: string
+    bgWhite: string
+
+    //styles
+    reset: string
+    // bold: string
+    dim: string
+    italic: string
+    underline: string
+    inverse: string
+    hidden: string
+    strikethrough: string
+
+    //extras
+    rainbow: string
+    zebra: string
+    america: string
+    trap: string
+    random: string
 }
-
-interface CommandLineArgs 
-{
-	(args: CommandLineConfig[]): Cli
-}
-
-interface Cli 
-{
-	parse(): any
-	getUsage(any): any
-}
-
-
-

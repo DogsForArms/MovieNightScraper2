@@ -1,18 +1,13 @@
-///<reference path="../vendor/colors.d.ts" />
-///<reference path="../vendor/command-line-args.d.ts" />
-///<reference path="./MovieNightAPI/resolvers/Vodlocker_com.ts" />
-///<reference path="./MovieNightAPI/ResolverCommon.ts" />
-///<reference path="./MovieNightAPI/ProcessNode.ts" />
-///<reference path="./MovieNightAPI/Public.ts" />
 
-
+import {ProcessNode} from './MovieNightAPI/ProcessNode'
+import {scrape} from './MovieNightAPI/Public'
+import {Result, ResultType} from './MovieNightAPI/Resolver'
+import * as commandLineArgs from 'command-line-args'
 
 var colors = require('colors')
-// var MovieNightScraper = require('./MovieNightScraper.js')
-var cliArgs : CommandLineArgs = require('command-line-args')
 
 
-var optionalCommandLineConfigs: CommandLineConfig[] = [
+var optionalCommandLineConfigs: commandLineArgs.OptionDefinition[] = [
 	{
 		name: "verbose",
 		type: Boolean,
@@ -26,36 +21,35 @@ var optionalCommandLineConfigs: CommandLineConfig[] = [
 	}
 
 ];
-var requiredCommandLineConfigs: CommandLineConfig[] = [
-	// { 
-	// 	name: "searchPodcast", 
-	// 	type: String, 
-	// 	alias: "p", 
-	// 	description: "Give me a query" 
-	// },
-	// { 
-	// 	name: "resolvePodcast", 
-	// 	type: String, 
-	// 	alias: "f", 
-	// 	description: "Give me a valid itunes urlFeed for a podcast" 
-	// },
-	// { 
-	// 	name: "search", 
-	// 	type: String, 
-	// 	alias: "s", 
-	// 	description: "Give me a query" 
-	// },
-	// { 
-	// 	name: "paginateTest", 
-	// 	type: Boolean, 
-	// 	alias: "t", 
-	// 	description: "Paginate test" 
-	// }
-	
+var requiredCommandLineConfigs: commandLineArgs.OptionDefinition[] = [
+	{ 
+		name: "searchPodcast", 
+		type: String, 
+		alias: "p", 
+		description: "Give me a query" 
+	},
+	{ 
+		name: "resolvePodcast", 
+		type: String, 
+		alias: "f", 
+		description: "Give me a valid itunes urlFeed for a podcast" 
+	},
+	{ 
+		name: "search", 
+		type: String, 
+		alias: "s", 
+		description: "Give me a query" 
+	},
+	{ 
+		name: "paginateTest", 
+		type: Boolean, 
+		alias: "t", 
+		description: "Paginate test" 
+	},
 	{
 		name: 'phantom',
 		type: Boolean,
-		alias: "p",
+		alias: "h",
 		description: "test phantom js"
 	},
 	{
@@ -65,17 +59,17 @@ var requiredCommandLineConfigs: CommandLineConfig[] = [
 		description: "Scrape media from a url."
 	}, 
 ]
-var cli = cliArgs( optionalCommandLineConfigs.concat(requiredCommandLineConfigs) )
 
-var options;
+var options: any;
 try 
 {
-	options = cli.parse(); 
+	options = commandLineArgs( optionalCommandLineConfigs.concat(requiredCommandLineConfigs) )
 } 
 catch (e) 
 {
 	options = {help: true}
 	console.log("\n*****\nError: Incorect Usage\n*****".red.underline.bold)
+	console.log(e)
 }
 var hasNeededArgs = requiredCommandLineConfigs.some(function(commandLineConfig){
 	return options[commandLineConfig.name]
@@ -88,36 +82,36 @@ if (!hasNeededArgs)
 
 
 
-var usage = cli.getUsage({
-    header: "Movie Night Backend.",
-    footer: "Search and Resolve content."
-});
+// var usage = cli.getUsage({
+//     header: "Movie Night Backend.",
+//     footer: "Search and Resolve content."
+// });
 
-if (options.help || !hasNeededArgs) 
+// if (options.help || !hasNeededArgs) 
+// {
+// 	console.log(usage);
+// } 
+// else 
 {
-	console.log(usage);
-} 
-else 
-{
-	if (!options.verbose)
-	{
-			console.debug = function(message?: string, ...optionalParams: any[]): void {}
-	}
-	else
-	{
-		console.debug = console.log
-	}
+	// if (!options.verbose)
+	// {
+	// 	console.debug = function(message?: string, ...optionalParams: any[]): void {}
+	// }
+	// else
+	// {
+	// 	console.debug = console.log
+	// }
 	
 	if (options.scrape)
 	{
 		var resultsCount = 0
 		var usedUids: any = []
 
-		var head = new MovieNightAPI.ProcessNode(function(results: MovieNightAPI.Result[], process: MovieNightAPI.ProcessNode) {
+		var head = new ProcessNode(function(results: Result[], process: ProcessNode) {
 			
 
 			results.forEach(function(result){
-				if (result.type == MovieNightAPI.ResultType.Content && usedUids[result.content.uid] == undefined)
+				if (result.type == ResultType.Content && usedUids[result.content.uid] == undefined)
 				{
 					usedUids[result.content.uid] = true
 					resultsCount++
@@ -136,7 +130,7 @@ else
 			}
 		})
 
-		MovieNightAPI.scrape(options.scrape, head)
+		scrape(options.scrape, head)
 
 	} else
 	if (options.phantom)

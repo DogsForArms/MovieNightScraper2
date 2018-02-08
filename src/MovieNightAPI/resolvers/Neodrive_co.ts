@@ -1,37 +1,41 @@
-module MovieNightAPI {
-    export class Neodrive_co implements Resolver<string>
-    {
-        domain = 'neodrive.co'
-        name = 'Neodrive'
-        needsClientRefetch = true
+import {Resolver} from '../Resolver'
+import {ProcessNode} from '../ProcessNode'
+import {ResolverCommon, extractMediaId} from '../ResolverCommon'
+import {Content, UrlStream, finishedWithContent} from '../Content'
 
-        mediaIdExtractors: ((url: string) => (string))[] = [
-            function(url) { return /neodrive\.co\/share\/file\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) },
-            function(url) { return /neodrive\.co\/embed\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) }
-        ]
+export class Neodrive_co implements Resolver<string>
+{
+    domain = 'neodrive.co'
+    name = 'Neodrive'
+    needsClientRefetch = true
 
-        resolveId(mediaIdentifier: string, process: ProcessNode) {
-            var self = this
+    mediaIdExtractors: ((url: string) => (string))[] = [
+        function(url) { return /neodrive\.co\/share\/file\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) },
+        function(url) { return /neodrive\.co\/embed\/([a-zA-Z\d]*?)(\/)?(\.html)?$/.execute(url) }
+    ]
 
-            var url = ('http://neodrive.co/embed/' + mediaIdentifier)
-            ResolverCommon.get(url, self, process).then(function(html) {
-                var fn = RegExp.curryExecute(html)
-                var content = new Content(self, mediaIdentifier)
+    resolveId(mediaIdentifier: string, process: ProcessNode) {
+        var self = this
 
-                content.snapshotImageUrl = fn(/vthumbnail\s*=\s*["'](.*?)["']/)
-                content.title = fn(/vtitle\s*=\s*["'](.*?)["']/)
-                content.streams = [new UrlStream(fn(/vurl\s*=\s*["'](.*?)["']/))]
+        var url = ('http://neodrive.co/embed/' + mediaIdentifier)
+        ResolverCommon.get(url, self, process).then(function(html) {
+            var fn = RegExp.curryExecute(html)
+            var content = new Content(self, mediaIdentifier)
 
-                finishedWithContent(content, self, process)
-            })
-        }
+            content.snapshotImageUrl = fn(/vthumbnail\s*=\s*["'](.*?)["']/)
+            content.title = fn(/vtitle\s*=\s*["'](.*?)["']/)
+            content.streams = [new UrlStream(fn(/vurl\s*=\s*["'](.*?)["']/))]
 
-        recognizesUrlMayContainContent(url: string): boolean {
-            return extractMediaId(this, url) != null
-        }
+            finishedWithContent(content, self, process)
+        })
+    }
 
-        scrape(url: string, process: ProcessNode) {
-            extractMediaId(this, url, process)
-        }
+    recognizesUrlMayContainContent(url: string): boolean {
+        return extractMediaId(this, url) != null
+    }
+
+    scrape(url: string, process: ProcessNode) {
+        extractMediaId(this, url, process)
     }
 }
+

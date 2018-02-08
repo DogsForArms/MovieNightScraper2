@@ -1,4 +1,20 @@
-RegExp.prototype.execute = function(str: string) {
+export {}
+    
+declare global {
+    interface RegExp {
+        execute(str: string): string
+        executeAll(str: string): string[]
+        execAll(str: string): RegExpExecArray[]
+    }
+
+    interface RegExpConstructor {
+        curryExecute(str: string): ((reg: RegExp) => (string))
+        allUrls(html: string, excluding?: string[]): string[]
+        // 	executeAll(obj: StringToRegExpMap, str: string): StringToStringMap
+    }
+}
+
+RegExp.prototype.execute = function(this: RegExp, str: string) {
 
     var results: RegExpExecArray = this.exec(str)
     if (results) {
@@ -6,7 +22,7 @@ RegExp.prototype.execute = function(str: string) {
     }
     return null
 }
-RegExp.prototype.executeAll = function(str: string): string[] {
+RegExp.prototype.executeAll = function(this: RegExp, str: string): string[] {
     var self = this
     var results: string[] = []
 
@@ -19,7 +35,7 @@ RegExp.prototype.executeAll = function(str: string): string[] {
 
 }
 
-RegExp.prototype.execAll = function(str: string): RegExpExecArray[] {
+RegExp.prototype.execAll = function(this: RegExp, str: string): RegExpExecArray[] {
     var self = this
     var results: RegExpExecArray[] = []
 
@@ -31,19 +47,13 @@ RegExp.prototype.execAll = function(str: string): RegExpExecArray[] {
     return results
 }
 
-interface RegExp {
-    execute(str: string): string
-    executeAll(str: string): string[]
-    execAll(str: string): RegExpExecArray[]
-}
-
 RegExp.curryExecute = function(str: string): ((reg: RegExp) => (string)) {
     return function(reg: RegExp): string {
         return reg.execute(str)
     }
 }
 RegExp.allUrls = function(html: string, excluding?: string[]): string[] {
-    var alreadyUsedUrls: any = (excluding || []).reduce(function(l, c) {
+    var alreadyUsedUrls: any = (excluding || []).reduce(function(l: any, c) {
         l[c] = true
         return l
     }, {})
@@ -60,9 +70,4 @@ RegExp.allUrls = function(html: string, excluding?: string[]): string[] {
         }
         return false
     })
-}
-interface RegExpConstructor {
-    curryExecute(str: string): ((reg: RegExp) => (string))
-    allUrls(html: string, excluding?: string[]): string[]
-    // 	executeAll(obj: StringToRegExpMap, str: string): StringToStringMap
 }
